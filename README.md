@@ -18,9 +18,9 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 
 ## Credits
 
-- Inspiration: forple
+- Inspiration: forple, Lockster
 - Initial template: PinoBatch
-- Action53 configuration: zeta0134
+- Action53 configuration and mapper-specific setup: zeta0134
 - Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf
 - General assistance: the NESDev Discord server
 
