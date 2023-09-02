@@ -1,6 +1,4 @@
-# insert title here
-
-![insert screenshot here](docs/screenshot.png)
+<img src="graphics/title/title transparent.svg">
 
 ## About
 

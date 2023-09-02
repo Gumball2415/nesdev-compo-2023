@@ -29,7 +29,7 @@ action53_shadow: .res 1
 
 .proc init_action53
 	; 32k PRG
-	a53_write A53_REG_OUTER_BANK, #$FF
+	a53_write A53_REG_OUTER_BANK, #$1F
 	a53_write A53_REG_MODE, #(A53_MIRRORING_VERTICAL | A53_PRG_BANK_MODE_FIXED_C000 | A53_PRG_OUTER_BANK_64K)
 	a53_write A53_REG_CHR_BANK, #0
 	a53_write A53_REG_INNER_BANK, #0

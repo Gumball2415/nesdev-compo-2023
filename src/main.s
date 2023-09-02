@@ -9,6 +9,12 @@
 	txa
 	pha
 
+	; transfer OAM
+	lda #0
+	sta OAMADDR
+	lda #>SHADOW_OAM
+	sta OAM_DMA
+
 	pla
 	tax
 	pla
@@ -32,7 +38,6 @@
 	rti
 .endproc
 
-.import init_action53
 .proc reset_handler
 	sei        ; ignore IRQs
 	cld        ; disable decimal mode
@@ -41,22 +46,19 @@
 	ldx #$ff
 	txs        ; Set up stack
 	inx        ; now X = 0
-	stx $2000  ; disable NMI
-	stx $2001  ; disable rendering
+	stx PPUCTRL  ; disable NMI
+	stx PPUMASK  ; disable rendering
 	stx $4010  ; disable DMC IRQs
-
-	; Set PRG bank
-	jsr init_action53
 
 	; The vblank flag is in an unknown state after reset,
 	; so it is cleared here to make sure that @vblankwait1
 	; does not exit immediately.
-	bit $2002
+	bit PPUSTATUS
 
 	; First of two waits for vertical blank to make sure that the
 	; PPU has stabilized
 @vblankwait1:  
-	bit $2002
+	bit PPUSTATUS
 	bpl @vblankwait1
 
 	; We now have about 30,000 cycles to burn before the PPU stabilizes.
@@ -67,26 +69,39 @@
 @clrmem:
 	sta $000,x
 	sta $100,x
-	sta $200,x
 	sta $300,x
 	sta $400,x
 	sta $500,x
 	sta $600,x
 	sta $700,x
+	lda #$FF
+	sta SHADOW_OAM,x
+	lda #0
 	inx
 	bne @clrmem
 
-	; Other things you can do between vblank waits are set up audio
-	; or set up other mapper registers.
+	; clean OAM memory
+	lda #0
+	sta OAMADDR
+	lda #>SHADOW_OAM
+	sta OAM_DMA
+
+	; Set PRG bank
+	jsr init_action53
 
 @vblankwait2:
 	bit $2002
 	bpl @vblankwait2
-	
+
 	jmp main
 .endproc
 
 .segment "PRG0_8000"
 .proc main
+	jsr run_state_machine
 	jmp main
+.endproc
+
+.proc run_state_machine
+	rts
 .endproc
