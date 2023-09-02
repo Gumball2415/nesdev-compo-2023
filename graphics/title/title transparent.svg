@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="256"
+   height="240"
+   viewBox="0 0 67.733333 63.499999"
+   version="1.1"
+   id="svg5"
+   inkscape:export-filename="title trans.png"
+   inkscape:export-xdpi="720"
+   inkscape:export-ydpi="720"
+   inkscape:version="1.2.2 (732a01da63, 2022-12-09)"
+   sodipodi:docname="title transparent.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="3.1251123"
+     inkscape:cx="147.83469"
+     inkscape:cy="78.717171"
+     inkscape:window-width="1920"
+     inkscape:window-height="1057"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1815">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop1811" />
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="1"
+         id="stop1813" />
+    </linearGradient>
+    <rect
+       x="102.27225"
+       y="38.917759"
+       width="345.07513"
+       height="114.50575"
+       id="rect236" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1815"
+       id="linearGradient1817"
+       x1="198.35674"
+       y1="85.101685"
+       x2="198.35674"
+       y2="119.76012"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <text
+       xml:space="preserve"
+       transform="matrix(0.38919182,0,0,0.38919182,-73.345416,0.98986012)"
+       id="text234"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;fill:url(#linearGradient1817);fill-opacity:1;fill-rule:evenodd;stroke:#005778;stroke-width:1.00207656;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:markers stroke fill;stroke-opacity:1"
+       x="144.48001"
+       y="0"><tspan
+         x="201.80957"
+         y="70.949219"
+         id="tspan259"><tspan
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
+           id="tspan257">project
+</tspan></tspan><tspan
+         x="201.80957"
+         y="111.38047"
+         id="tspan263"><tspan
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
+           id="tspan261">SHVTERA
+</tspan></tspan></text>
+  </g>
+</svg>
