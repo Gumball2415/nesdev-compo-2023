@@ -1,4 +1,4 @@
-<img src="graphics/title/title transparent.svg">
+<img src="graphics/title/title trans.png" style="max-width:100%;" />
 
 ## About
 
