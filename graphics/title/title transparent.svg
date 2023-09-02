@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="256"
-   height="240"
-   viewBox="0 0 67.733333 63.499999"
+   width="214.28073"
+   height="105.13312"
+   viewBox="0 0 56.695103 27.816467"
    version="1.1"
    id="svg5"
    inkscape:export-filename="title trans.png"
@@ -28,9 +28,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="3.1251123"
-     inkscape:cx="147.83469"
-     inkscape:cy="78.717171"
+     inkscape:zoom="0.55244703"
+     inkscape:cx="-133.94949"
+     inkscape:cy="153.86091"
      inkscape:window-width="1920"
      inkscape:window-height="1057"
      inkscape:window-x="-8"
@@ -70,25 +70,26 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-5.5191127,-17.841765)">
     <text
        xml:space="preserve"
        transform="matrix(0.38919182,0,0,0.38919182,-73.345416,0.98986012)"
        id="text234"
-       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;fill:url(#linearGradient1817);fill-opacity:1;fill-rule:evenodd;stroke:#005778;stroke-width:1.00207656;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;paint-order:markers stroke fill;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;fill:url(#linearGradient1817);fill-opacity:1;fill-rule:evenodd;stroke:#005778;stroke-width:1.00208;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers stroke fill"
        x="144.48001"
        y="0"><tspan
          x="201.80957"
          y="70.949219"
-         id="tspan259"><tspan
+         id="tspan260"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan257">project
+           id="tspan258">project
 </tspan></tspan><tspan
          x="201.80957"
          y="111.38047"
-         id="tspan263"><tspan
+         id="tspan264"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan261">SHVTERA
+           id="tspan262">SHVTERA
 </tspan></tspan></text>
   </g>
 </svg>
