@@ -24,7 +24,7 @@
 .global read_pads
 
 ; graphics.s
-.global transfer_palette, update_scrolling
+.global transfer_palette, update_scrolling, ppu_clear_nt
 .globalzp shadow_palette
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK

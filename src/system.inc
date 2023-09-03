@@ -5,6 +5,8 @@
 .enum STATE_ID
 	sys_TITLESCR
 	sys_GALLERYS
+
+	sys_ID_COUNT
 .endenum
 
 .struct 

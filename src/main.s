@@ -2,13 +2,13 @@
 .include "nes.inc"
 
 .segment "ZEROPAGE"
-sys_state:      .res 1
-sys_mode:       .res 1
 temp1_8:        .res 1
 temp2_8:        .res 1
 temp1_16:       .res 2
 temp2_16:       .res 2
 temp3_16:       .res 2
+sys_state:      .res 1
+sys_mode:       .res 1
 
 nmis:           .res 1
 oam_used:       .res 1  ; starts at 0
@@ -17,6 +17,15 @@ new_keys:       .res 2
 
 
 .segment "PRGFIXED_C000"
+
+program_table_lo:
+	.byte .lobyte(title_subroutine)
+	.byte .lobyte(gallery_subroutine)
+
+program_table_hi:
+	.byte .hibyte(title_subroutine)
+	.byte .hibyte(gallery_subroutine)
+
 .proc nmi_handler
 	pha
 	tya
@@ -108,8 +117,17 @@ new_keys:       .res 2
 	bit $2002
 	bpl @vblankwait2
 
-	; update graphics
-	jsr update_graphics
+	; clear nametables
+	lda #$00
+	ldx #$20
+	tay
+	jsr ppu_clear_nt
+	ldx #$24
+	jsr ppu_clear_nt
+	ldx #$28
+	jsr ppu_clear_nt
+	ldx #$2C
+	jsr ppu_clear_nt
 
 	; enable NMI immediately, set scroll to 0
 	lda #VBLANK_NMI
@@ -124,11 +142,12 @@ new_keys:       .res 2
 	lda #STATE_ID::sys_TITLESCR
 	sta sys_state
 	
-	; fall through to mainloop
+	jmp mainloop
 .endproc
 
 .proc mainloop
 	; read controllers
+	; clobbers the three 16-bit variables
 	jsr read_pads
 
 	; run the machine
@@ -147,15 +166,14 @@ wait_for_nmi:
 
 .proc run_state_machine
 	ldx sys_state
-	lda program_table,x
+	cpx #STATE_ID::sys_ID_COUNT
+	bcs @continue
+	lda program_table_lo,x
 	sta temp1_16+0
-	inx
-	lda program_table,x
+	lda program_table_hi,x
 	sta temp1_16+1
 	jmp (temp1_16)
-.endproc
-
-.proc title_subroutine
+@continue:
 	rts
 .endproc
 
@@ -175,5 +193,13 @@ wait_for_nmi:
 	rts
 .endproc
 
-program_table:
-	.addr title_subroutine
+.proc title_subroutine
+	; load screen
+	; load tileset, nametable, and palettes associated
+	rts
+.endproc
+
+.proc gallery_subroutine
+	; ?
+	rts
+.endproc
