@@ -1,9 +1,8 @@
-<img src="graphics/title/title trans.png" style="max-width:100%;" />
+<img src="graphics/title/title trans.png" style="max-width:80%;" />
 
 ## About
 
 This is my entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
-idea 1: some kind of art gallery using fullscreen 2bpp graphics (mapper 96 esque)
 
 ## Compiling
 
@@ -17,7 +16,7 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 ## Credits
 
 - Inspiration: forple, Lockster
-- Initial template: PinoBatch
+- Initial template: PinoBatch, yoeynsf
 - Action53 configuration and mapper-specific setup: zeta0134
 - Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf
 - General assistance: the NESDev Discord server

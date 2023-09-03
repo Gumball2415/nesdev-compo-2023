@@ -1,6 +1,21 @@
 .include "global.inc"
 .include "nes.inc"
 
+.segment "ZEROPAGE"
+sys_state:      .res 1
+sys_mode:       .res 1
+temp1_8:        .res 1
+temp2_8:        .res 1
+temp1_16:       .res 2
+temp2_16:       .res 2
+temp3_16:       .res 2
+
+nmis:           .res 1
+oam_used:       .res 1  ; starts at 0
+cur_keys:       .res 2
+new_keys:       .res 2
+
+
 .segment "PRGFIXED_C000"
 .proc nmi_handler
 	pha
@@ -9,11 +24,9 @@
 	txa
 	pha
 
-	; transfer OAM
-	lda #0
-	sta OAMADDR
-	lda #>SHADOW_OAM
-	sta OAM_DMA
+	inc nmis
+	
+	; run music
 
 	pla
 	tax
@@ -79,12 +92,14 @@
 	lda #0
 	inx
 	bne @clrmem
+	; clean shadow palette
 
-	; clean OAM memory
-	lda #0
-	sta OAMADDR
-	lda #>SHADOW_OAM
-	sta OAM_DMA
+	lda #$0F
+	ldx #32
+@clrspalette:
+	sta shadow_palette,x
+	dex
+	bne @clrspalette
 
 	; Set PRG bank
 	jsr init_action53
@@ -93,15 +108,72 @@
 	bit $2002
 	bpl @vblankwait2
 
-	jmp main
+	; update graphics
+	jsr update_graphics
+
+	; enable NMI immediately, set scroll to 0
+	lda #VBLANK_NMI
+	sta PPUCTRL
+	sta s_PPUCTRL
+
+	; enable rendering, will be updated later
+	lda #BG_ON|OBJ_ON
+	sta s_PPUMASK
+
+	; set system state to title screen
+	lda #STATE_ID::sys_TITLESCR
+	sta sys_state
+	
+	; fall through to mainloop
 .endproc
 
-.segment "PRG0_8000"
-.proc main
+.proc mainloop
+	; read controllers
+	jsr read_pads
+
+	; run the machine
 	jsr run_state_machine
-	jmp main
+	
+	lda nmis
+wait_for_nmi:
+	cmp nmis
+	beq wait_for_nmi
+
+	; update graphics
+	jsr update_graphics
+
+	jmp mainloop
 .endproc
 
 .proc run_state_machine
+	ldx sys_state
+	lda program_table,x
+	sta temp1_16+0
+	inx
+	lda program_table,x
+	sta temp1_16+1
+	jmp (temp1_16)
+.endproc
+
+.proc title_subroutine
 	rts
 .endproc
+
+.proc update_graphics
+	; transfer OAM
+	lda #0
+	sta OAMADDR
+	lda #>SHADOW_OAM
+	sta OAM_DMA
+	
+	; transfer palettes
+	jsr transfer_palette
+	
+	; update scroll
+	jsr update_scrolling
+
+	rts
+.endproc
+
+program_table:
+	.addr title_subroutine
