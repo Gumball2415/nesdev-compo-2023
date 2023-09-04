@@ -106,8 +106,8 @@ program_table_hi:
 	lda #$0F
 	ldx #32
 @clrspalette:
-	sta shadow_palette,x
 	dex
+	sta shadow_palette,x
 	bne @clrspalette
 
 	; Set PRG bank
@@ -167,14 +167,15 @@ wait_for_nmi:
 .proc run_state_machine
 	ldx sys_state
 	cpx #STATE_ID::sys_ID_COUNT
-	bcs @continue
+	bcs @end
 	lda program_table_lo,x
 	sta temp1_16+0
 	lda program_table_hi,x
 	sta temp1_16+1
 	jmp (temp1_16)
-@continue:
-	rts
+@end:
+	; something has gone terribly wrong.
+	jmp @end
 .endproc
 
 .proc update_graphics
