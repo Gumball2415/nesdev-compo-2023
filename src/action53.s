@@ -23,7 +23,9 @@
 .include "nes.inc"
 
 .zeropage
-action53_shadow: .res 1
+s_A53_REG_SELECT: .res 1
+s_A53_CHR_BANK: .res 1
+s_A53_PRG_BANK: .res 1
 
 .segment "PRGFIXED_C000"
 

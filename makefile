@@ -96,7 +96,8 @@ $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
 # Files that depend on .incbin'd files
-# $(objdir)/main.o: $(objdir)/bggfx.chr $(objdir)/spritegfx.chr
+$(objdir)/graphics.o: $(objdir)/bank0.chr $(objdir)/bank1.chr $(objdir)/bank2.chr \
+	$(objdir)/universal.chr
 
 # This is an example of how to call a lookup table generator at
 # build time.  mktables.py itself is not included because the demo
@@ -105,13 +106,10 @@ $(objdir)/%.o: $(objdir)/%.s
 $(objdir)/ntscPeriods.s: tools/mktables.py
 	$(PY) $< period $@
 
-# Rules for CHR ROM
+# Rules for CHR data
 
-# $(title).chr: $(objdir)/bggfx.chr $(objdir)/spritegfx.chr
-	# cat $^ > $@
-
-# $(objdir)/%.chr: $(imgdir)/%.png
-	# $(PY) tools/pilbmp2nes.py $< $@
+$(objdir)/%.chr: $(imgdir)/%.chr
+	cp $< $@
 
 # $(objdir)/%16.chr: $(imgdir)/%.png
 	# $(PY) tools/pilbmp2nes.py -H 16 $< $@

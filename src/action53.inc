@@ -47,7 +47,7 @@ A53_PRG_OUTER_BANK_256K      =   %00110000
 
 .macro a53_write register, value
         lda #register
-        sta action53_shadow
+        sta s_A53_REG_SELECT
         sta A53_REG_SELECT
         lda value
         sta A53_REG_VALUE
@@ -64,4 +64,6 @@ A53_PRG_OUTER_BANK_256K      =   %00110000
 .endmacro
 
 .global init_action53
-.globalzp action53_shadow
+.globalzp s_A53_REG_SELECT
+.globalzp s_A53_CHR_BANK
+.globalzp s_A53_PRG_BANK

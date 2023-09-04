@@ -15,7 +15,6 @@ oam_used:       .res 1  ; starts at 0
 cur_keys:       .res 2
 new_keys:       .res 2
 
-
 .segment "PRGFIXED_C000"
 
 program_table_lo:
@@ -112,10 +111,18 @@ program_table_hi:
 
 	; Set PRG bank
 	jsr init_action53
+	lda #3
+	sta s_A53_CHR_BANK
+	a53_set_chr s_A53_CHR_BANK
+	lda #0
+	sta s_A53_PRG_BANK
 
 @vblankwait2:
-	bit $2002
+	bit PPUSTATUS
 	bpl @vblankwait2
+	
+	; transfer palettes so that we don't linger on a dead screen
+	jsr transfer_palette
 
 	; clear nametables
 	lda #$00
@@ -129,6 +136,17 @@ program_table_hi:
 	ldx #$2C
 	jsr ppu_clear_nt
 
+	; clear all CHR RAM, important for doing visual CHR loading
+	; jsr clear_all_chr
+	
+	; load universal palette
+	lda #<universal_tileset
+	sta temp1_16+0
+	lda #>universal_tileset
+	sta temp1_16+1
+	lda #0
+	jsr transfer_4k_chr
+
 	; enable NMI immediately, set scroll to 0
 	lda #VBLANK_NMI
 	sta PPUCTRL
@@ -139,7 +157,7 @@ program_table_hi:
 	sta s_PPUMASK
 
 	; set system state to title screen
-	lda #STATE_ID::sys_TITLESCR
+	lda #STATE_ID::sys_GALLERYS
 	sta sys_state
 	
 	jmp mainloop
@@ -179,6 +197,9 @@ wait_for_nmi:
 .endproc
 
 .proc update_graphics
+	lda #0
+	sta PPUMASK				; disable rendering
+	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
 	; transfer OAM
 	lda #0
 	sta OAMADDR
@@ -190,17 +211,38 @@ wait_for_nmi:
 	
 	; update scroll
 	jsr update_scrolling
+	
+	lda s_PPUMASK
+	sta PPUMASK
+
+	lda s_PPUCTRL				; enable NMI immediately
+	sta PPUCTRL
 
 	rts
 .endproc
 
 .proc title_subroutine
+	rts
+.endproc
+
+.proc gallery_subroutine
+	jsr sys_state_init
+	; ?
 	; load screen
 	; load tileset, nametable, and palettes associated
 	rts
 .endproc
 
-.proc gallery_subroutine
-	; ?
+.proc sys_state_init
+	lda sys_mode
+	and #sys_MODE_CHRTRANSFER
+	bne @end
+	; todo: lookup tables for chr depending on current index
+	jsr load_chr_bitmap
+
+	lda sys_mode
+	ora #sys_MODE_CHRTRANSFER
+	sta sys_mode
+@end:
 	rts
 .endproc

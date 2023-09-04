@@ -24,7 +24,8 @@
 .global read_pads
 
 ; graphics.s
-.global transfer_palette, update_scrolling, ppu_clear_nt
+.global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr
+.global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .globalzp shadow_palette
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK

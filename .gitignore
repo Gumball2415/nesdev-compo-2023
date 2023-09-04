@@ -1,12 +1,11 @@
 *.sw[a-p]
 *.o
 *~
-*.chr
 *.cdl
 *.nes
 *.nl
 *.dbg
-/obj/*.s
+/obj/*
 /output/*
 /zip.in
 *.nes.deb
@@ -19,6 +18,3 @@ nrom-template-*.zip
 
 # this is NES homebrew, not DSiWare
 *.DS_Store
-
-
-
