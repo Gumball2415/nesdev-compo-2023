@@ -1,5 +1,6 @@
 .include "global.inc"
 .include "nes.inc"
+.include "checked_branches.inc"
 
 .segment "ZEROPAGE"
 temp1_8:        .res 1
@@ -173,7 +174,7 @@ program_table_hi:
 	a53_set_chr s_A53_CHR_BANK
 
 	; enable NMI immediately
-	lda #VBLANK_NMI
+	lda #VBLANK_NMI|OBJ_1000
 	sta PPUCTRL
 	sta s_PPUCTRL
 
@@ -237,6 +238,9 @@ wait_for_nmi:
 	; update scroll
 	jsr update_scrolling
 	
+	; switch to initial graphics bank
+	a53_set_chr s_A53_CHR_BANK
+	
 	lda s_PPUMASK
 	sta PPUMASK
 
@@ -251,17 +255,96 @@ wait_for_nmi:
 .endproc
 
 .proc gallery_subroutine
+	lda sys_mode
+	and #sys_MODE_CHRTRANSFER
+	bne @continue
 	jsr sys_state_init
 	; ?
 	; load screen
 	; load tileset, nametable, and palettes associated
 	rts
+	
+@continue:
+	jsr gallery_display_kernel
+	rts
+.endproc
+
+.proc gallery_display_kernel
+	; delay for a bit to ensure we're into the visible screen area at this point
+	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
+	ldy #0
+	:
+		nop
+		dey
+		bne :-
+
+@check_sprite0:
+	bit PPUSTATUS
+	bvc @check_sprite0  ; spin on sprite 0 hit
+
+	; delay to wait for end of scanline before swapping to CHR bank 1 (2nd image slice)
+	; will also synchronize the delay loops afterwards
+	ldy #13                           ;  2  2
+	:
+		dey        ;  2
+		c_bne :-   ;  3
+		;          ; -1
+	;                                 ; 64 66
+	;nop
+	a53_write A53_REG_CHR_BANK, #1
+
+.scope
+	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
+	; exactly 64 scanlines
+	ldx #13                          ;    2
+	@delay:
+		ldy #110                          ;   2
+		@inner:
+			dey                           ;  2  2
+			c_bne @inner                  ;  3  5
+			;                             ; -1
+		;                                 ; 549 551
+		dex                               ;   2 553
+		c_bne @delay                      ;   3 556
+		;                                 ;  -1
+	;                                ; 7227 7229
+	ldy #6                           ;    2 7231
+	:
+		dey        ;  2  2
+		c_bne :-   ;  3  5
+		;          ; -1
+	;                                ;   29 7260
+	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
+.endscope
+	
+.scope
+	; cycle-counted delay to wait before swapping to CHR bank 3 (status bar)
+	; exactly 64 scanlines
+	ldx #13                          ;    2
+	@delay:
+		ldy #110                          ;   2
+		@inner:
+			dey                           ;  2  2
+			c_bne @inner                  ;  3  5
+			;                             ; -1
+		;                                 ; 549 551
+		dex                               ;   2 553
+		c_bne @delay                      ;   3 556
+		;                                 ;  -1
+	;                                ; 7227 7229
+	ldy #6                           ;    2 7231
+	:
+		dey        ;  2  2
+		c_bne :-   ;  3  5
+		;          ; -1
+	;                                ;   29 7260
+	a53_write A53_REG_CHR_BANK, #3   ;   15 7275
+.endscope
+	
+	rts
 .endproc
 
 .proc sys_state_init
-	lda sys_mode
-	and #sys_MODE_CHRTRANSFER
-	bne @end
 
 	; disable rendering
 	lda #0
@@ -273,6 +356,15 @@ wait_for_nmi:
 
 	jsr load_chr_bitmap
 	
+	;set up sprite zero in OAM shadow buffer
+	ldy #<gallery_sprite0_data_size
+	dey
+	:
+		lda gallery_sprite0_data, y
+		sta SHADOW_OAM, y
+		dey
+		bpl :-
+	
 	;enable NMI again
 	lda s_PPUCTRL
 	sta PPUCTRL
@@ -280,7 +372,6 @@ wait_for_nmi:
 	lda sys_mode
 	ora #sys_MODE_CHRTRANSFER
 	sta sys_mode
-@end:
 	rts
 .endproc
 

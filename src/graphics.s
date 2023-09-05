@@ -57,6 +57,11 @@ img_0:
 	.addr img_0_attr
 	.byte 1 
 
+gallery_sprite0_data:
+	;.byte $46, $08, $00, $00    ; TODO: uncomment this when tileset is fixed
+	.byte $46, $08, $00, $07     ; (pixel should be on bottom-left corner, not bottom-right)
+	gallery_sprite0_data_size := * - gallery_sprite0_data
+
 ; copies the palette from shadow regs to PPU
 .proc transfer_palette
 	lda #$3F

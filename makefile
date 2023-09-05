@@ -29,6 +29,7 @@ objdir = obj
 srcdir = src
 imgdir = gfx
 outdir = output
+make_dirs = $(objdir) $(outdir)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -52,9 +53,9 @@ DOTEXE:=
 PY:=
 endif
 
-.PHONY: all dist zip clean
+.PHONY: build_dirs all dist zip clean
 
-all: $(outdir)/$(title)-$(version).nes
+all: build_dirs $(outdir)/$(title)-$(version).nes
 
 # Rule to create or update the distribution zipfile by adding all
 # files listed in zip.in.  Actually the zipfile depends on every
@@ -81,6 +82,10 @@ $(objdir)/index.txt: makefile
 clean:
 	if [ "$(wildcard $(objdir)/*)" ]; then rm -v $(objdir)/*; fi
 	if [ "$(wildcard $(outdir)/*)" ]; then rm -v $(outdir)/*; fi
+
+build_dirs:
+	@mkdir -p $(make_dirs) 2>/dev/null
+
 
 # Rules for PRG ROM
 

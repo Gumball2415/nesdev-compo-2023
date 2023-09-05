@@ -46,11 +46,11 @@ A53_PRG_OUTER_BANK_128K      =   %00100000
 A53_PRG_OUTER_BANK_256K      =   %00110000
 
 .macro a53_write register, value
-        lda #register
-        sta s_A53_REG_SELECT
-        sta A53_REG_SELECT
-        lda value
-        sta A53_REG_VALUE
+        lda #register          ;  2  2
+        sta z:s_A53_REG_SELECT ;  3  5
+        sta A53_REG_SELECT     ;  4  9
+        lda value              ;  x  9 + x
+        sta A53_REG_VALUE      ;  4 13 + x,  x = lda value
 .endmacro
 
 .macro a53_set_prg bank_number
