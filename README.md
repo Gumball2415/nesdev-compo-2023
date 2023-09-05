@@ -2,7 +2,10 @@
 
 ## About
 
-This is my entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
+This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
+Main collaborators:
+- Persune (Gumball2415)
+- Kagamiin
 
 ## Compiling
 
@@ -13,12 +16,18 @@ Dependencies (these must be available in path):
 
 Run the makefile in a suitable bash environment. For more detailed instructions, refer to Pinobatch's [NROM template](https://github.com/pinobatch/nrom-template). If no bash environment is available, run the make.bat file.
 
+## License
+
+- This project is licensed under the MIT license.
+- Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2022-2023 zeta0134.
+- nrom-template related functions and compiling scripts are licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
+
 ## Credits
 
 - Inspiration: forple, Lockster
 - Initial template: PinoBatch, yoeynsf
-- Action53 configuration and mapper-specific setup: zeta0134
-- Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf
+- Action53 configuration and mapper helper functions: zeta0134
+- Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf, Kagamiin
 - General assistance: the NESDev Discord server
 
 Thanks so much for your wonderful help!!
