@@ -79,9 +79,10 @@ img_0:
 ; @param A 0 = left, 1 = right 
 ; @param temp1_16 pointer to compressed chr data
 .proc transfer_4k_chr
-	clc
-	ror a
-	ror a
+	asl a
+	asl a
+	asl a
+	asl a
 	sta PPUADDR
 	ldy #0
 	sty PPUADDR
@@ -203,44 +204,39 @@ img_0:
 
 	a53_set_prg img_pointer+img_DATA_PTR::img_PAL_LOC
 	lda img_pointer+img_DATA_PTR::img_PAL_PTR
-	sta temp1_16+0
-	lda img_pointer+img_DATA_PTR::img_PAL_PTR+1
-	sta temp1_16+1
+	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
+	jsr load_ptr_temp1_16
 	lda #0
 	jsr transfer_img_pal
 
 	a53_set_prg img_pointer+img_DATA_PTR::img_ATTR_LOC
 	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
-	sta temp1_16+0
-	lda img_pointer+img_DATA_PTR::img_ATTR_PTR+1
-	sta temp1_16+1
+	ldx img_pointer+img_DATA_PTR::img_ATTR_PTR+1
+	jsr load_ptr_temp1_16
 	lda #$23
 	jsr transfer_img_attr
 
 	a53_set_chr #0
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK0_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
-	sta temp1_16+0
-	lda img_pointer+img_DATA_PTR::img_BANK0_PTR+1
-	sta temp1_16+1
+	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
+	jsr load_ptr_temp1_16
 	lda #0
 	jsr transfer_4k_chr
 
 	a53_set_chr #1
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK1_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
-	sta temp1_16+0
-	lda img_pointer+img_DATA_PTR::img_BANK1_PTR+1
-	sta temp1_16+1
+	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
+	jsr load_ptr_temp1_16
 	lda #0
 	jsr transfer_4k_chr
 
 	a53_set_chr #2
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK2_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
-	sta temp1_16+0
-	lda img_pointer+img_DATA_PTR::img_BANK2_PTR+1
-	sta temp1_16+1
+	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
+	jsr load_ptr_temp1_16
 	lda #0
 	jsr transfer_4k_chr
 

@@ -17,7 +17,7 @@
 .global reset_handler
 
 ; main.s
-.global main, nmi_handler, irq_handler, reset_handler
+.global main, nmi_handler, irq_handler, reset_handler, load_ptr_temp1_16
 .globalzp cur_keys, new_keys, oam_used
 
 ; pads.s

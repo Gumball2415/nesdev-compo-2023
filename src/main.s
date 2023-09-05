@@ -139,14 +139,35 @@ program_table_hi:
 	; clear all CHR RAM, important for doing visual CHR loading
 	; jsr clear_all_chr
 	
-	; load universal palette
-	
+	; load universal tileset in sprite tileset
+	a53_set_chr #0
+	lda #<universal_tileset
+	ldx #>universal_tileset
+	jsr load_ptr_temp1_16
+	lda #1
+	jsr transfer_4k_chr
+	a53_set_chr #1
+	lda #<universal_tileset
+	ldx #>universal_tileset
+	jsr load_ptr_temp1_16
+	lda #1
+	jsr transfer_4k_chr
+	a53_set_chr #2
+	lda #<universal_tileset
+	ldx #>universal_tileset
+	jsr load_ptr_temp1_16
+	lda #1
+	jsr transfer_4k_chr
 	a53_set_chr #3
 	lda #<universal_tileset
-	sta temp1_16+0
-	lda #>universal_tileset
-	sta temp1_16+1
+	ldx #>universal_tileset
+	jsr load_ptr_temp1_16
 	lda #0
+	jsr transfer_4k_chr
+	lda #<universal_tileset
+	ldx #>universal_tileset
+	jsr load_ptr_temp1_16
+	lda #1
 	jsr transfer_4k_chr
 
 	a53_set_chr s_A53_CHR_BANK
@@ -260,5 +281,18 @@ wait_for_nmi:
 	ora #sys_MODE_CHRTRANSFER
 	sta sys_mode
 @end:
+	rts
+.endproc
+
+;;
+; helper function: set pointer using A and X
+; this happens quite a lot, so it may save bytes
+; on just calling a subroutine instead
+; @param A: low byte of address
+; @param X: high byte of address
+; @param temp1_16: pointer variable
+.proc load_ptr_temp1_16
+	sta temp1_16+0
+	stx temp1_16+1
 	rts
 .endproc
