@@ -111,7 +111,7 @@ program_table_hi:
 
 	; Set PRG bank
 	jsr init_action53
-	lda #3
+	lda #0
 	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
 	lda #0
@@ -140,6 +140,8 @@ program_table_hi:
 	; jsr clear_all_chr
 	
 	; load universal palette
+	
+	a53_set_chr #3
 	lda #<universal_tileset
 	sta temp1_16+0
 	lda #>universal_tileset
@@ -147,7 +149,9 @@ program_table_hi:
 	lda #0
 	jsr transfer_4k_chr
 
-	; enable NMI immediately, set scroll to 0
+	a53_set_chr s_A53_CHR_BANK
+
+	; enable NMI immediately
 	lda #VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
@@ -215,7 +219,7 @@ wait_for_nmi:
 	lda s_PPUMASK
 	sta PPUMASK
 
-	lda s_PPUCTRL				; enable NMI immediately
+	lda s_PPUCTRL
 	sta PPUCTRL
 
 	rts
@@ -237,8 +241,20 @@ wait_for_nmi:
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
 	bne @end
-	; todo: lookup tables for chr depending on current index
+
+	; disable rendering
+	lda #0
+	sta PPUMASK
+	sta PPUCTRL
+
+	lda #$20
+	jsr set_gallery_nametable
+
 	jsr load_chr_bitmap
+	
+	;enable NMI again
+	lda s_PPUCTRL
+	sta PPUCTRL
 
 	lda sys_mode
 	ora #sys_MODE_CHRTRANSFER

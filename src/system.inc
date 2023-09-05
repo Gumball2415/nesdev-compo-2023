@@ -21,6 +21,7 @@ sys_MODE_CHRTRANSFER = %00000001
 	img_BANK1_LOC .byte
 	img_BANK2_PTR .word
 	img_BANK2_LOC .byte
+
 	img_PAL_PTR .word
 	img_PAL_LOC .byte
 	img_ATTR_PTR .word

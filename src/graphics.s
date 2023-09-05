@@ -9,54 +9,68 @@ s_PPUCTRL:      .res 1
 s_PPUMASK:      .res 1
 ppu_scroll_x:   .res 1
 ppu_scroll_y:   .res 1
+load_progress:  .res 1
+img_index:      .res 1
+img_pointer:    .tag img_DATA_PTR
 
 
 
 .segment "PRG0_8000"
 universal_tileset:
 	.incbin "obj/universal.chr"
-img0_bank0:
+
+img_0_bank0:
 	.incbin "obj/bank0.chr"
-img0_bank1:
+img_0_bank1:
 	.incbin "obj/bank1.chr"
-img0_bank2:
+img_0_bank2:
 	.incbin "obj/bank2.chr"
 
+.segment "PRG1_8000"
+img_0_pal:
+	.byte $0f,$00,$10,$30
+	.byte $0f,$01,$21,$31
+	.byte $0f,$06,$16,$26
+	.byte $0f,$09,$19,$29
+	.byte $0f,$00,$10,$30
+	.byte $0f,$01,$21,$31
+	.byte $0f,$06,$16,$26
+	.byte $0f,$09,$19,$29
+img_0_attr:
+	.res 64, 0
+
+
+
 .segment "PRGFIXED_C000"
+img_table:
+	.addr img_0
+
 img_0:
-    .addr universal_tileset
-    .addr img_0_lo
-    .addr img_0_hi
+    .addr img_0_bank0
+	.byte 0
+    .addr img_0_bank1
+	.byte 0
+    .addr img_0_bank2
+	.byte 0
+	.addr img_0_pal
+	.byte 1
+	.addr img_0_attr
+	.byte 1 
 
-img_0_lo:
-    .byte .lobyte(universal_tileset)
-    .byte .lobyte(img0_bank0)
-    .byte .lobyte(img0_bank1)
-    .byte .lobyte(img0_bank2)
-
-img_0_hi:
-    .byte .hibyte(universal_tileset)
-    .byte .hibyte(img0_bank0)
-    .byte .hibyte(img0_bank1)
-    .byte .hibyte(img0_bank2)
-
-.proc transfer_palette
 ; copies the palette from shadow regs to PPU
-
-	lda PPUSTATUS
-
+.proc transfer_palette
 	lda #$3F
 	sta PPUADDR
 	lda #$00
 	sta PPUADDR
 
-	ldx #$20
-:
-	lda shadow_palette, x
+	ldx #0
+@loop:
+	lda shadow_palette,x
 	sta PPUDATA
-	dex
-	bne :-
-
+	inx
+	cpx #32
+	bne @loop
 	rts
 .endproc
 
@@ -80,6 +94,58 @@ img_0_hi:
 	inc temp1_16+1
 	dex
 	bne @loop
+	rts
+.endproc
+
+;;
+; decompresses and transfers palette data to shadow palette
+; @param temp1_16 pointer to compressed palette data
+.proc transfer_img_pal
+	ldy #0
+@loop:
+	lda (temp1_16),y
+	sta shadow_palette,y
+	iny
+	cpy #32
+	bne @loop
+	rts
+.endproc
+
+;;
+; decompresses and transfers attribute data to PPU
+; @param A base address of attribute table ($23, $27, $2B, or $2F)
+; @param temp1_16 pointer to compressed attribute data
+.proc transfer_img_attr
+	sta PPUADDR
+	lda #$C0
+	sta PPUADDR
+	ldy #0
+@loop:
+	lda (temp1_16),y
+	sta PPUDATA
+	iny
+	cpy #64
+	bne @loop
+	rts
+.endproc
+
+;;
+; sets the nametable for gallery view
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc set_gallery_nametable
+	sta PPUADDR
+	lda #$20
+	sta PPUADDR
+
+	ldx #3
+	ldy #0
+@loop:
+    sty PPUDATA
+	iny
+	bne @loop
+	dex
+	bne @loop
+
 	rts
 .endproc
 
@@ -114,32 +180,72 @@ img_0_hi:
 .endproc
 
 ;;
-; loads 3 4K chr banks into RAM
+; loads the bitmap image with palette and attribute table
 ; @param A image index
-; TODO: do actual indexing
 .proc load_chr_bitmap
+
+	; index into the image table
+	lda img_index
+	asl a
+	tax
+	lda img_table,x
+	sta temp1_16+0
+	lda img_table+1,x
+	sta temp1_16+1
+
+	ldy #0
+@ptr_load:
+	lda (temp1_16),y
+	sta img_pointer,y
+	iny
+	cpy #15
+	bne @ptr_load
+
+	a53_set_prg img_pointer+img_DATA_PTR::img_PAL_LOC
+	lda img_pointer+img_DATA_PTR::img_PAL_PTR
+	sta temp1_16+0
+	lda img_pointer+img_DATA_PTR::img_PAL_PTR+1
+	sta temp1_16+1
+	lda #0
+	jsr transfer_img_pal
+
+	a53_set_prg img_pointer+img_DATA_PTR::img_ATTR_LOC
+	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
+	sta temp1_16+0
+	lda img_pointer+img_DATA_PTR::img_ATTR_PTR+1
+	sta temp1_16+1
+	lda #$23
+	jsr transfer_img_attr
+
 	a53_set_chr #0
-	lda #<img0_bank0
+	a53_set_prg img_pointer+img_DATA_PTR::img_BANK0_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
 	sta temp1_16+0
-	lda #>img0_bank0
+	lda img_pointer+img_DATA_PTR::img_BANK0_PTR+1
 	sta temp1_16+1
 	lda #0
 	jsr transfer_4k_chr
+
 	a53_set_chr #1
-	lda #<img0_bank1
+	a53_set_prg img_pointer+img_DATA_PTR::img_BANK1_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
 	sta temp1_16+0
-	lda #>img0_bank1
+	lda img_pointer+img_DATA_PTR::img_BANK1_PTR+1
 	sta temp1_16+1
 	lda #0
 	jsr transfer_4k_chr
+
 	a53_set_chr #2
-	lda #<img0_bank2
+	a53_set_prg img_pointer+img_DATA_PTR::img_BANK2_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
 	sta temp1_16+0
-	lda #>img0_bank2
+	lda img_pointer+img_DATA_PTR::img_BANK2_PTR+1
 	sta temp1_16+1
 	lda #0
 	jsr transfer_4k_chr
+
 	a53_set_chr s_A53_CHR_BANK
+	a53_set_prg s_A53_PRG_BANK
 	rts
 .endproc
 
