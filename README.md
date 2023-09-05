@@ -1,8 +1,9 @@
-<img src="graphics/title/title trans.png" style="max-width:80%;" />
+<img src="graphics/title/title transparent.svg" style="max-width:80%;" />
 
 ## About
 
 This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
+
 Main collaborators:
 - Persune (Gumball2415)
 - Kagamiin
