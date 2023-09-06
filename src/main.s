@@ -34,21 +34,19 @@ program_table_hi:
 	pha
 
 	inc nmis
-
+	; check if we're interrupting CHR transfer
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
 	beq @skip
-	a53_set_chr #4
+
 	lda #$24
 	jsr update_progress_bar
 
-	; update graphics
 	jsr update_graphics
-
-	lda s_PPUMASK
-	sta PPUMASK
+	; overwrite PPUCTRL
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
+
 	ldy #0
 @loopwait:
 	nop
@@ -64,6 +62,13 @@ program_table_hi:
 	lda s_PPUCTRL
 	sta PPUCTRL
 	a53_set_chr s_A53_CHR_BANK
+	lda #%10000000
+	sta nmi_occured
+	bit PPUSTATUS
+	lda temp2_16+1
+	sta PPUADDR
+	lda temp2_16+0
+	sta PPUADDR
 
 @skip:
 	; run music
@@ -244,51 +249,32 @@ wait_for_nmi:
 	jmp @end
 .endproc
 
-.proc update_graphics
-	lda #0
-	sta PPUMASK				; disable rendering
-	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
-	; transfer OAM
-	lda #0
-	sta OAMADDR
-	lda #>SHADOW_OAM
-	sta OAM_DMA
-	
-	; transfer palettes
-	jsr transfer_palette
-	
-	; update scroll
-	jsr update_scrolling
-	
-	; switch to initial graphics bank
-	a53_set_chr s_A53_CHR_BANK
-	
-	lda s_PPUMASK
-	sta PPUMASK
-
-	lda s_PPUCTRL
-	sta PPUCTRL
-
-	rts
-.endproc
-
 .proc title_subroutine
 	rts
 .endproc
 
 .proc gallery_subroutine
 	lda sys_mode
-	and #sys_MODE_CHRTRANSFER
+	and #sys_MODE_CHRDONE
 	bne @continue
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
+
 	rts
 
 @continue:
 	; run logic
-
+	; todo:  refer to "docs/state machine diagram or whatevs.png" 
+	lda cur_keys
+	and #KEY_LEFT|KEY_RIGHT|KEY_UP|KEY_DOWN
+	beq @skip
+	lda sys_mode
+	and #($FF - sys_MODE_CHRDONE)
+	sta sys_mode
+@skip:
 	; display raster bankswitched image
 	jsr gallery_display_kernel
+
 	rts
 .endproc
 
@@ -307,7 +293,6 @@ wait_for_nmi:
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
 	a53_write A53_REG_CHR_BANK, #1
-
 .scope
 	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
 	; exactly 64 scanlines
@@ -360,9 +345,6 @@ wait_for_nmi:
 .endproc
 
 .proc gallery_init
-	lda sys_mode
-	ora #sys_MODE_CHRTRANSFER
-	sta sys_mode
 	; disable rendering
 	lda #0
 	sta PPUMASK
@@ -370,11 +352,23 @@ wait_for_nmi:
 
 	lda #$20
 	jsr set_gallery_nametable
+
 	lda #$24
 	jsr set_gallery_loading_screen
 
+	; let the NMI handler know that we're transferring CHR
+	lda sys_mode
+	ora #sys_MODE_CHRTRANSFER
+	sta sys_mode
+
 	jsr load_chr_bitmap
-	
+
+	; let the NMI handler know that we're done transferring CHR
+	lda sys_mode
+	and #($FF - sys_MODE_CHRTRANSFER)
+	ora #sys_MODE_CHRDONE
+	sta sys_mode
+
 	;set up sprite zero in OAM shadow buffer
 	ldy #<gallery_sprite0_data_size
 	dey
@@ -383,6 +377,35 @@ wait_for_nmi:
 		sta SHADOW_OAM, y
 		dey
 		bpl :-
+
+	rts
+.endproc
+
+.proc update_graphics
+	lda #0
+	sta PPUMASK				; disable rendering
+	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
+	; transfer OAM
+	lda #0
+	sta OAMADDR
+	lda #>SHADOW_OAM
+	sta OAM_DMA
+	
+	; transfer palettes
+	jsr transfer_palette
+	
+	; update scroll
+	jsr update_scrolling
+	
+	; switch to initial graphics bank
+	a53_set_chr s_A53_CHR_BANK
+	
+	lda s_PPUMASK
+	sta PPUMASK
+
+	lda s_PPUCTRL
+	sta PPUCTRL
+
 	rts
 .endproc
 

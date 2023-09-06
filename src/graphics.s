@@ -12,6 +12,7 @@ ppu_scroll_y: .res 1
 img_progress: .res 1
 img_index:    .res 1
 img_pointer:  .tag img_DATA_PTR
+nmi_occured:  .res 1
 
 
 
@@ -62,10 +63,11 @@ gallery_sprite0_data:
 	.byte $56, $08, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
 loadscreen_sprite0_data:
-	.byte $7E, $08, $00, $BE
+	.byte $1E, $08, $00, $DF
 	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 ; copies the palette from shadow regs to PPU
 .proc transfer_palette
+	bit PPUSTATUS
 	lda #$3F
 	sta PPUADDR
 	lda #$00
@@ -86,6 +88,7 @@ loadscreen_sprite0_data:
 ; @param A base address of CHR page ($00 or $10)
 ; @param temp1_16 pointer to compressed chr data
 .proc transfer_4k_chr
+	bit PPUSTATUS
 	sta PPUADDR
 	ldy #0
 	sty PPUADDR
@@ -95,6 +98,49 @@ loadscreen_sprite0_data:
 	sta PPUDATA
 	iny
 	bne @loop
+	inc temp1_16+1
+	dex
+	bne @loop
+	rts
+.endproc
+
+;;
+; decompresses and transfers 4K chr data to PPU, being interrupt safe
+; designed to be interrupt resistant
+; @param A base address of CHR page ($00 or $10)
+; @param temp1_16 pointer to compressed chr data
+; @param temp2_16 shadow pointer to PPUADDR
+; @param temp1_8 counter
+.proc transfer_4k_chr_nmi_safe
+	bit PPUSTATUS
+	sta temp2_16+1
+	sta PPUADDR
+	ldy #0
+	sty temp2_16+0
+	sty PPUADDR
+	ldx #>4096
+@loop:
+	; NMI interrupt mutex check
+	; thanks Kasumi!
+	lda nmi_occured
+	bpl @skip_interrupt_fix
+	and #%01111111
+	sta nmi_occured
+	bit PPUSTATUS
+	lda temp2_16+1
+	sta PPUADDR
+	lda temp2_16+0
+	sta PPUADDR
+@skip_interrupt_fix:
+	lda (temp1_16),y
+	sta PPUDATA
+	inc temp2_16+0
+	bne @skip_high_inc
+	inc temp2_16+1
+@skip_high_inc:
+	iny
+	bne @loop
+
 	inc temp1_16+1
 	inc img_progress
 	dex
@@ -121,6 +167,7 @@ loadscreen_sprite0_data:
 ; @param A base address of attribute table ($23, $27, $2B, or $2F)
 ; @param temp1_16 pointer to compressed attribute data
 .proc transfer_img_attr
+	bit PPUSTATUS
 	sta PPUADDR
 	lda #$C0
 	sta PPUADDR
@@ -145,6 +192,7 @@ loadscreen_sprite0_data:
 	jsr ppu_clear_nt
 	pla
 
+	bit PPUSTATUS
 	sta PPUADDR
 	lda #$60
 	sta PPUADDR
@@ -166,6 +214,7 @@ loadscreen_sprite0_data:
 .proc clear_chr
 	lda #0
 	tay
+	bit PPUSTATUS
 	sta PPUADDR
 	sta PPUADDR
 	ldx #>8192
@@ -227,7 +276,6 @@ loadscreen_sprite0_data:
 	lda #$23
 	jsr transfer_img_attr
 
-
 	; setup loading screen
 	lda s_A53_CHR_BANK
 	pha
@@ -240,15 +288,9 @@ loadscreen_sprite0_data:
 		sta SHADOW_OAM, y
 		dey
 		bpl :-
-	lda s_PPUMASK
-	sta PPUMASK
+
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
-
-	lda nmis
-@wait_for_nmi:
-	cmp nmis
-	beq @wait_for_nmi
 
 	lda #0
 	sta s_A53_CHR_BANK
@@ -258,7 +300,7 @@ loadscreen_sprite0_data:
 	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
-	jsr transfer_4k_chr
+	jsr transfer_4k_chr_nmi_safe
 
 	lda #1
 	sta s_A53_CHR_BANK
@@ -268,7 +310,7 @@ loadscreen_sprite0_data:
 	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
-	jsr transfer_4k_chr
+	jsr transfer_4k_chr_nmi_safe
 
 	lda #2
 	sta s_A53_CHR_BANK
@@ -278,12 +320,13 @@ loadscreen_sprite0_data:
 	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
-	jsr transfer_4k_chr
+	jsr transfer_4k_chr_nmi_safe
 
 	pla
 	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg s_A53_PRG_BANK
+	
 	rts
 .endproc
 
@@ -300,30 +343,12 @@ txt_now_loading:
 	tay
 	jsr ppu_clear_nt
 
-	; draw loading bar
-	pla
-	tax
-	inx
-	stx temp1_8
-	stx PPUADDR
-	lda #$A4
-	sta PPUADDR
-
-	lda #$05
-	sta PPUDATA
-	ldx #22
-	lda #$06
-@loop1:
-    sta PPUDATA
-	dex
-	bne @loop1
-	lda #$07
-	sta PPUDATA
-
 	; draw text
-	lda temp1_8
+	pla
+	sta temp1_8
+	bit PPUSTATUS
 	sta PPUADDR
-	lda #$E8
+	lda #$48
 	sta PPUADDR
 
 	lda #<txt_now_loading
@@ -341,6 +366,25 @@ txt_now_loading:
 	lda #$04
 	sta PPUDATA
 
+	; draw loading bar
+	lda temp1_8
+	bit PPUSTATUS
+	sta PPUADDR
+	lda #$64
+	sta PPUADDR
+
+	lda #$05
+	sta PPUDATA
+	ldx #22
+	lda #$06
+@loop1:
+    sta PPUDATA
+	dex
+	bne @loop1
+	lda #$07
+	sta PPUDATA
+
+
 	rts
 .endproc
 
@@ -348,16 +392,15 @@ txt_now_loading:
 ; updates the loading progress bar
 ; @param A base address of nametable ($20, $24, $28, or $2C)
 .proc update_progress_bar
-	tax
-	inx
-	stx PPUADDR
-	lda #$A4
+	bit PPUSTATUS
+	sta PPUADDR
+	lda #$64
 	sta PPUADDR
 
 	lda img_progress
 	lsr a
-	beq @end
 	tax
+	inx
 	lda #$03
 @loop1:
     sta PPUDATA
@@ -377,6 +420,7 @@ txt_now_loading:
 ; @param Y attribute value ($00, $55, $AA, or $FF)
 .proc ppu_clear_nt
   ; Set base PPU address to XX00
+  bit PPUSTATUS
   stx PPUADDR
   ldx #$00
   stx PPUADDR

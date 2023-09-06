@@ -37,5 +37,6 @@
 .globalzp ppu_scroll_y
 .globalzp img_progress
 .globalzp img_index
+.globalzp nmi_occured
 
 .endif

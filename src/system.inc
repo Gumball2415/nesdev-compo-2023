@@ -10,6 +10,7 @@
 .endenum
 
 sys_MODE_CHRTRANSFER = %00000001
+sys_MODE_CHRDONE     = %00000010
 
 
 .struct img_DATA_PTR
