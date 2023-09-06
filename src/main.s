@@ -34,7 +34,38 @@ program_table_hi:
 	pha
 
 	inc nmis
-	
+
+	lda sys_mode
+	and #sys_MODE_CHRTRANSFER
+	beq @skip
+	a53_set_chr #4
+	lda #$24
+	jsr update_progress_bar
+
+	; update graphics
+	jsr update_graphics
+
+	lda s_PPUMASK
+	sta PPUMASK
+	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
+	sta PPUCTRL
+	ldy #0
+@loopwait:
+	nop
+	dey
+	bne @loopwait
+
+@check_sprite0:
+	bit PPUSTATUS
+	bvc @check_sprite0  ; spin on sprite 0 hit
+	; partial CHR load here
+	lda #0
+	sta PPUMASK
+	lda s_PPUCTRL
+	sta PPUCTRL
+	a53_set_chr s_A53_CHR_BANK
+
+@skip:
 	; run music
 
 	pla
@@ -187,7 +218,7 @@ program_table_hi:
 
 	; run the machine
 	jsr run_state_machine
-	
+
 	lda nmis
 wait_for_nmi:
 	cmp nmis
@@ -329,9 +360,13 @@ wait_for_nmi:
 .endproc
 
 .proc gallery_init
+	lda sys_mode
+	ora #sys_MODE_CHRTRANSFER
+	sta sys_mode
 	; disable rendering
 	lda #0
 	sta PPUMASK
+	sta PPUCTRL
 
 	lda #$20
 	jsr set_gallery_nametable
@@ -348,10 +383,6 @@ wait_for_nmi:
 		sta SHADOW_OAM, y
 		dey
 		bpl :-
-
-	lda sys_mode
-	ora #sys_MODE_CHRTRANSFER
-	sta sys_mode
 	rts
 .endproc
 

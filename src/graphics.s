@@ -57,11 +57,13 @@ img_0:
 	.addr img_0_attr
 	.byte 1 
 
+; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
-	; sprite 0 hit happens precisely on this pixel
 	.byte $56, $08, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
-
+loadscreen_sprite0_data:
+	.byte $7E, $08, $00, $BE
+	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 ; copies the palette from shadow regs to PPU
 .proc transfer_palette
 	lda #$3F
@@ -225,7 +227,32 @@ gallery_sprite0_data:
 	lda #$23
 	jsr transfer_img_attr
 
-	a53_set_chr #0
+
+	; setup loading screen
+	lda s_A53_CHR_BANK
+	pha
+	a53_set_chr #4
+	;set up sprite zero in OAM shadow buffer
+	ldy #<loadscreen_sprite0_data_size
+	dey
+	:
+		lda loadscreen_sprite0_data, y
+		sta SHADOW_OAM, y
+		dey
+		bpl :-
+	lda s_PPUMASK
+	sta PPUMASK
+	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
+	sta PPUCTRL
+
+	lda nmis
+@wait_for_nmi:
+	cmp nmis
+	beq @wait_for_nmi
+
+	lda #0
+	sta s_A53_CHR_BANK
+	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK0_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
@@ -233,7 +260,9 @@ gallery_sprite0_data:
 	lda #$00
 	jsr transfer_4k_chr
 
-	a53_set_chr #1
+	lda #1
+	sta s_A53_CHR_BANK
+	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK1_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
@@ -241,7 +270,9 @@ gallery_sprite0_data:
 	lda #$00
 	jsr transfer_4k_chr
 
-	a53_set_chr #2
+	lda #2
+	sta s_A53_CHR_BANK
+	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg img_pointer+img_DATA_PTR::img_BANK2_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
@@ -249,6 +280,8 @@ gallery_sprite0_data:
 	lda #$00
 	jsr transfer_4k_chr
 
+	pla
+	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg s_A53_PRG_BANK
 	rts
@@ -308,6 +341,29 @@ txt_now_loading:
 	lda #$04
 	sta PPUDATA
 
+	rts
+.endproc
+
+;;
+; updates the loading progress bar
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc update_progress_bar
+	tax
+	inx
+	stx PPUADDR
+	lda #$A4
+	sta PPUADDR
+
+	lda img_progress
+	lsr a
+	beq @end
+	tax
+	lda #$03
+@loop1:
+    sta PPUDATA
+	dex
+	bne @loop1
+@end:
 	rts
 .endproc
 
