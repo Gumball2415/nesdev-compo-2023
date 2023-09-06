@@ -125,18 +125,6 @@ program_table_hi:
 	; transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
 
-	; clear nametables
-	lda #$00
-	ldx #$20
-	tay
-	jsr ppu_clear_nt
-	ldx #$24
-	jsr ppu_clear_nt
-	ldx #$28
-	jsr ppu_clear_nt
-	ldx #$2C
-	jsr ppu_clear_nt
-
 	; clear all CHR RAM, important for doing visual CHR loading
 	; jsr clear_all_chr
 	
@@ -145,30 +133,30 @@ program_table_hi:
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #1
+	lda #$10
 	jsr transfer_4k_chr
 	a53_set_chr #1
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #1
+	lda #$10
 	jsr transfer_4k_chr
 	a53_set_chr #2
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #1
+	lda #$10
 	jsr transfer_4k_chr
 	a53_set_chr #3
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #0
+	lda #$00
 	jsr transfer_4k_chr
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #1
+	lda #$10
 	jsr transfer_4k_chr
 
 	a53_set_chr s_A53_CHR_BANK
@@ -185,6 +173,9 @@ program_table_hi:
 	; set system state to title screen
 	lda #STATE_ID::sys_GALLERYS
 	sta sys_state
+	
+	lda #0
+	sta img_progress
 	
 	jmp mainloop
 .endproc
@@ -258,18 +249,20 @@ wait_for_nmi:
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
 	bne @continue
-	jsr sys_state_init
-	; ?
-	; load screen
-	; load tileset, nametable, and palettes associated
+	; load screen, tileset, nametable, and palettes associated
+	jsr gallery_init
 	rts
-	
+
 @continue:
+	; run logic
+
+	; display raster bankswitched image
 	jsr gallery_display_kernel
 	rts
 .endproc
 
 .proc gallery_display_kernel
+	; here, we have a budget of 10528 cycles before sprite 0 hits
 	; delay for a bit to ensure we're into the visible screen area at this point
 	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
 	ldy #0
@@ -282,15 +275,6 @@ wait_for_nmi:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
-	; delay to wait for end of scanline before swapping to CHR bank 1 (2nd image slice)
-	; will also synchronize the delay loops afterwards
-	ldy #13                           ;  2  2
-	:
-		dey        ;  2
-		c_bne :-   ;  3
-		;          ; -1
-	;                                 ; 64 66
-	;nop
 	a53_write A53_REG_CHR_BANK, #1
 
 .scope
@@ -344,15 +328,15 @@ wait_for_nmi:
 	rts
 .endproc
 
-.proc sys_state_init
-
+.proc gallery_init
 	; disable rendering
 	lda #0
 	sta PPUMASK
-	sta PPUCTRL
 
 	lda #$20
 	jsr set_gallery_nametable
+	lda #$24
+	jsr set_gallery_loading_screen
 
 	jsr load_chr_bitmap
 	
@@ -364,10 +348,6 @@ wait_for_nmi:
 		sta SHADOW_OAM, y
 		dey
 		bpl :-
-	
-	;enable NMI again
-	lda s_PPUCTRL
-	sta PPUCTRL
 
 	lda sys_mode
 	ora #sys_MODE_CHRTRANSFER

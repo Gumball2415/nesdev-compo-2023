@@ -15,7 +15,7 @@
 	.byte $00                       ; n * 8KB CHR ROM
 
 	; Flag 6
-	.byte %11000000
+	.byte %11000001
 	;      |||||||+- Mirroring: 0: horizontal (vertical arrangement) (CIRAM A10 = PPU A11)
 	;      |||||||              1: vertical (horizontal arrangement) (CIRAM A10 = PPU A10)
 	;      ||||||+-- 1: Cartridge contains battery-backed PRG RAM ($6000-7FFF) or other persistent memory

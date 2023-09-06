@@ -5,13 +5,13 @@
 shadow_palette: .res 32
 ; shadow regs for PPUCTRL and PPUMASK
 ; 
-s_PPUCTRL:      .res 1
-s_PPUMASK:      .res 1
-ppu_scroll_x:   .res 1
-ppu_scroll_y:   .res 1
-load_progress:  .res 1
-img_index:      .res 1
-img_pointer:    .tag img_DATA_PTR
+s_PPUCTRL:    .res 1
+s_PPUMASK:    .res 1
+ppu_scroll_x: .res 1
+ppu_scroll_y: .res 1
+img_progress: .res 1
+img_index:    .res 1
+img_pointer:  .tag img_DATA_PTR
 
 
 
@@ -58,8 +58,8 @@ img_0:
 	.byte 1 
 
 gallery_sprite0_data:
-	;.byte $46, $08, $00, $00    ; TODO: uncomment this when tileset is fixed
-	.byte $46, $08, $00, $07     ; (pixel should be on bottom-left corner, not bottom-right)
+	; sprite 0 hit happens precisely on this pixel
+	.byte $56, $08, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
 
 ; copies the palette from shadow regs to PPU
@@ -81,13 +81,9 @@ gallery_sprite0_data:
 
 ;;
 ; decompresses and transfers 4K chr data to PPU
-; @param A 0 = left, 1 = right 
+; @param A base address of CHR page ($00 or $10)
 ; @param temp1_16 pointer to compressed chr data
 .proc transfer_4k_chr
-	asl a
-	asl a
-	asl a
-	asl a
 	sta PPUADDR
 	ldy #0
 	sty PPUADDR
@@ -98,6 +94,7 @@ gallery_sprite0_data:
 	iny
 	bne @loop
 	inc temp1_16+1
+	inc img_progress
 	dex
 	bne @loop
 	rts
@@ -139,8 +136,15 @@ gallery_sprite0_data:
 ; sets the nametable for gallery view
 ; @param A base address of nametable ($20, $24, $28, or $2C)
 .proc set_gallery_nametable
+	pha
+	tax
+	lda #0
+	tay
+	jsr ppu_clear_nt
+	pla
+
 	sta PPUADDR
-	lda #$20
+	lda #$60
 	sta PPUADDR
 
 	ldx #3
@@ -200,6 +204,7 @@ gallery_sprite0_data:
 	sta temp1_16+1
 
 	ldy #0
+	sty img_progress
 @ptr_load:
 	lda (temp1_16),y
 	sta img_pointer,y
@@ -211,7 +216,6 @@ gallery_sprite0_data:
 	lda img_pointer+img_DATA_PTR::img_PAL_PTR
 	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
 	jsr load_ptr_temp1_16
-	lda #0
 	jsr transfer_img_pal
 
 	a53_set_prg img_pointer+img_DATA_PTR::img_ATTR_LOC
@@ -226,7 +230,7 @@ gallery_sprite0_data:
 	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
 	jsr load_ptr_temp1_16
-	lda #0
+	lda #$00
 	jsr transfer_4k_chr
 
 	a53_set_chr #1
@@ -234,7 +238,7 @@ gallery_sprite0_data:
 	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
 	jsr load_ptr_temp1_16
-	lda #0
+	lda #$00
 	jsr transfer_4k_chr
 
 	a53_set_chr #2
@@ -242,11 +246,68 @@ gallery_sprite0_data:
 	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
 	jsr load_ptr_temp1_16
-	lda #0
+	lda #$00
 	jsr transfer_4k_chr
 
 	a53_set_chr s_A53_CHR_BANK
 	a53_set_prg s_A53_PRG_BANK
+	rts
+.endproc
+
+.charmap $20, $00
+txt_now_loading:
+	.byte "now loading... "
+;;
+; sets the nametable for gallery view
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc set_gallery_loading_screen
+	pha
+	tax
+	lda #0
+	tay
+	jsr ppu_clear_nt
+
+	; draw loading bar
+	pla
+	tax
+	inx
+	stx temp1_8
+	stx PPUADDR
+	lda #$A4
+	sta PPUADDR
+
+	lda #$05
+	sta PPUDATA
+	ldx #22
+	lda #$06
+@loop1:
+    sta PPUDATA
+	dex
+	bne @loop1
+	lda #$07
+	sta PPUDATA
+
+	; draw text
+	lda temp1_8
+	sta PPUADDR
+	lda #$E8
+	sta PPUADDR
+
+	lda #<txt_now_loading
+	ldx #>txt_now_loading
+	jsr load_ptr_temp1_16
+
+	ldy #0
+@loop2:
+	lda (temp1_16),y
+	sta PPUDATA
+	iny
+	cpy #15
+	bne @loop2
+
+	lda #$04
+	sta PPUDATA
+
 	rts
 .endproc
 
@@ -259,7 +320,6 @@ gallery_sprite0_data:
 ; @param X base address of nametable ($20, $24, $28, or $2C)
 ; @param Y attribute value ($00, $55, $AA, or $FF)
 .proc ppu_clear_nt
-
   ; Set base PPU address to XX00
   stx PPUADDR
   ldx #$00
