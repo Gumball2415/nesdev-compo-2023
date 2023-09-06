@@ -268,6 +268,9 @@ wait_for_nmi:
 	lda cur_keys
 	and #KEY_LEFT|KEY_RIGHT|KEY_UP|KEY_DOWN
 	beq @skip
+	; change the image index
+	
+	; bug the system to transfer the new CHR
 	lda sys_mode
 	and #($FF - sys_MODE_CHRDONE)
 	sta sys_mode
