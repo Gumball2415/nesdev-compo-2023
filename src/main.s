@@ -18,6 +18,73 @@ new_keys:       .res 2
 
 .segment "PRGFIXED_C000"
 
+; these routines are sensitive to page crosses
+.proc gallery_display_kernel
+	; here, we have a budget of 10528 cycles before sprite 0 hits
+	; delay for a bit to ensure we're into the visible screen area at this point
+	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
+	ldy #0
+	:
+		nop
+		dey
+		bne :-
+
+@check_sprite0:
+	bit PPUSTATUS
+	bvc @check_sprite0  ; spin on sprite 0 hit
+
+	a53_write A53_REG_CHR_BANK, #1
+.scope
+	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
+	; exactly 64 scanlines
+	ldx #13                          ;    2
+	@delay:
+		ldy #110                          ;   2
+		@inner:
+			dey                           ;  2  2
+			c_bne @inner                  ;  3  5
+			;                             ; -1
+		;                                 ; 549 551
+		dex                               ;   2 553
+		c_bne @delay                      ;   3 556
+		;                                 ;  -1
+	;                                ; 7227 7229
+	ldy #6                           ;    2 7231
+	:
+		dey        ;  2  2
+		c_bne :-   ;  3  5
+		;          ; -1
+	;                                ;   29 7260
+	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
+.endscope
+	
+.scope
+	; cycle-counted delay to wait before swapping to CHR bank 3 (status bar)
+	; exactly 64 scanlines
+	ldx #13                          ;    2
+	@delay:
+		ldy #110                          ;   2
+		@inner:
+			dey                           ;  2  2
+			c_bne @inner                  ;  3  5
+			;                             ; -1
+		;                                 ; 549 551
+		dex                               ;   2 553
+		c_bne @delay                      ;   3 556
+		;                                 ;  -1
+	;                                ; 7227 7229
+	ldy #6                           ;    2 7231
+	:
+		dey        ;  2  2
+		c_bne :-   ;  3  5
+		;          ; -1
+	;                                ;   29 7260
+	a53_write A53_REG_CHR_BANK, #3   ;   15 7275
+.endscope
+	
+	rts
+.endproc
+
 program_table_lo:
 	.byte .lobyte(title_subroutine)
 	.byte .lobyte(gallery_subroutine)
@@ -34,11 +101,25 @@ program_table_hi:
 	pha
 
 	inc nmis
+
 	; check if we're interrupting CHR transfer
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
 	beq @skip
+	jsr chrtransfer_interrupt
+@skip:
 
+	; run music
+
+	pla
+	tax
+	pla
+	tay
+	pla
+	rti
+.endproc
+
+.proc chrtransfer_interrupt
 	lda #$24
 	jsr update_progress_bar
 
@@ -69,16 +150,7 @@ program_table_hi:
 	sta PPUADDR
 	lda temp2_16+0
 	sta PPUADDR
-
-@skip:
-	; run music
-
-	pla
-	tax
-	pla
-	tay
-	pla
-	rti
+	rts
 .endproc
 
 .proc irq_handler
@@ -278,72 +350,6 @@ wait_for_nmi:
 	; display raster bankswitched image
 	jsr gallery_display_kernel
 
-	rts
-.endproc
-
-.proc gallery_display_kernel
-	; here, we have a budget of 10528 cycles before sprite 0 hits
-	; delay for a bit to ensure we're into the visible screen area at this point
-	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
-	ldy #0
-	:
-		nop
-		dey
-		bne :-
-
-@check_sprite0:
-	bit PPUSTATUS
-	bvc @check_sprite0  ; spin on sprite 0 hit
-
-	a53_write A53_REG_CHR_BANK, #1
-.scope
-	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
-	; exactly 64 scanlines
-	ldx #13                          ;    2
-	@delay:
-		ldy #110                          ;   2
-		@inner:
-			dey                           ;  2  2
-			c_bne @inner                  ;  3  5
-			;                             ; -1
-		;                                 ; 549 551
-		dex                               ;   2 553
-		c_bne @delay                      ;   3 556
-		;                                 ;  -1
-	;                                ; 7227 7229
-	ldy #6                           ;    2 7231
-	:
-		dey        ;  2  2
-		c_bne :-   ;  3  5
-		;          ; -1
-	;                                ;   29 7260
-	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
-.endscope
-	
-.scope
-	; cycle-counted delay to wait before swapping to CHR bank 3 (status bar)
-	; exactly 64 scanlines
-	ldx #13                          ;    2
-	@delay:
-		ldy #110                          ;   2
-		@inner:
-			dey                           ;  2  2
-			c_bne @inner                  ;  3  5
-			;                             ; -1
-		;                                 ; 549 551
-		dex                               ;   2 553
-		c_bne @delay                      ;   3 556
-		;                                 ;  -1
-	;                                ; 7227 7229
-	ldy #6                           ;    2 7231
-	:
-		dey        ;  2  2
-		c_bne :-   ;  3  5
-		;          ; -1
-	;                                ;   29 7260
-	a53_write A53_REG_CHR_BANK, #3   ;   15 7275
-.endscope
-	
 	rts
 .endproc
 
