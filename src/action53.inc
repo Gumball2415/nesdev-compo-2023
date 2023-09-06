@@ -19,6 +19,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ; SOFTWARE.
 
+; Modifications made by Kagamiin~:
+; - Added cycle count annotation to a53_write macro
+; - Added explicit zeropage designation to register select store in a53_write macro
+
 A53_REG_SELECT = $5000
 A53_REG_VALUE = $8000
 
