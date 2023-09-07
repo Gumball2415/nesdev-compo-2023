@@ -1,4 +1,5 @@
 *.sw[a-p]
+*.kate-swp
 *.o
 *~
 *.cdl
@@ -11,6 +12,9 @@
 *.nes.deb
 /map.txt
 /nsfmap.txt
+/tools/tokumaru/tokumaru
+/tools/tokumaru/demo/tokumaru
+*.exe
 __pycache__/
 *.pyc
 nrom-template.nes

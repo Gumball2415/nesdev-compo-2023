@@ -29,59 +29,50 @@ new_keys:       .res 2
 		dey
 		bne :-
 
+	inc s_A53_MUTEX
+	; splitting the a53_write macro in half for timing reasons 1/2
+	lda #A53_REG_CHR_BANK
+	sta z:s_A53_REG_SELECT
+
 @check_sprite0:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
-	a53_write A53_REG_CHR_BANK, #1
-.scope
+	; splitting the a53_write macro in half for timing reasons 2/2
+	sta A53_REG_SELECT
+	lda #1
+	sta A53_REG_VALUE
+
 	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
 	; exactly 64 scanlines
-	ldx #13                          ;    2
+	lda #%00010000                   ;    2    2  DMC active status bit
+	and SNDCHN                       ;    4    6
+	c_bne @skip_pre_delay            ;    3    9  compensate for cycles stolen by DMC DMA
+	;                                ;   -1    8    (measured approx. 32-36 cycles)
+	ldy #7                           ;    2   10
+	@loop:
+		dey         ;  2  2
+		c_bne @loop ;  3  5
+		;           ; -1
+	;                                ;   34   44
+
+@skip_pre_delay:
+	ldx #12                          ;    2   46
 	@delay:
-		ldy #110                          ;   2
+		ldy #119                          ;   2   2
 		@inner:
 			dey                           ;  2  2
 			c_bne @inner                  ;  3  5
 			;                             ; -1
-		;                                 ; 549 551
-		dex                               ;   2 553
-		c_bne @delay                      ;   3 556
+		;                                 ; 594 596
+		dex                               ;   2 598
+		c_bne @delay                      ;   3 601
 		;                                 ;  -1
-	;                                ; 7227 7229
-	ldy #6                           ;    2 7231
-	:
-		dey        ;  2  2
-		c_bne :-   ;  3  5
-		;          ; -1
-	;                                ;   29 7260
+	;                                ; 7211 7257
+	ldx #0                           ;    3 7260  dummy
 	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
-.endscope
-	
-.scope
-	; cycle-counted delay to wait before swapping to CHR bank 3 (status bar)
-	; exactly 64 scanlines
-	ldx #13                          ;    2
-	@delay:
-		ldy #110                          ;   2
-		@inner:
-			dey                           ;  2  2
-			c_bne @inner                  ;  3  5
-			;                             ; -1
-		;                                 ; 549 551
-		dex                               ;   2 553
-		c_bne @delay                      ;   3 556
-		;                                 ;  -1
-	;                                ; 7227 7229
-	ldy #6                           ;    2 7231
-	:
-		dey        ;  2  2
-		c_bne :-   ;  3  5
-		;          ; -1
-	;                                ;   29 7260
-	a53_write A53_REG_CHR_BANK, #3   ;   15 7275
-.endscope
-	
+
+	dec s_A53_MUTEX
 	rts
 .endproc
 
@@ -105,12 +96,16 @@ program_table_hi:
 	; check if we're interrupting CHR transfer
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
-	beq @skip
+	beq @not_chr_transfer
 
 	jsr chrtransfer_interrupt
+	jmp @skip_update_graphics
 
-@skip:
-	; run music
+@not_chr_transfer:
+	jsr update_graphics
+
+@skip_update_graphics:
+	jsr run_music
 
 	pla
 	tax
@@ -279,6 +274,9 @@ program_table_hi:
 	lda #0
 	sta img_progress
 	
+	; start music with song id #0
+	jsr start_music
+	
 	jmp mainloop
 .endproc
 
@@ -289,14 +287,11 @@ program_table_hi:
 
 	; run the machine
 	jsr run_state_machine
-
+	
 	lda nmis
 wait_for_nmi:
 	cmp nmis
 	beq wait_for_nmi
-
-	; update graphics
-	jsr update_graphics
 
 	jmp mainloop
 .endproc
@@ -379,11 +374,11 @@ wait_for_nmi:
 	;set up sprite zero in OAM shadow buffer
 	ldy #<gallery_sprite0_data_size
 	dey
-	:
+	@copy:
 		lda gallery_sprite0_data, y
 		sta SHADOW_OAM, y
 		dey
-		bpl :-
+		bpl @copy
 
 	rts
 .endproc

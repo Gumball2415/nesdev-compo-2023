@@ -15,6 +15,7 @@ img_pointer:  .tag img_DATA_PTR
 nmi_occured:  .res 1
 
 
+
 .segment "PRG0_8000"
 universal_tileset:
 	.incbin "obj/universal.toku"
@@ -236,10 +237,13 @@ loop2:
 	cpy #img_DATA_PTR::img_DATA_PTR_SIZE
 	bne @ptr_load
 
+	; save current PRG bank
+	lda s_A53_PRG_BANK
+	pha
 	; setup loading screen
 	lda s_A53_CHR_BANK
 	pha
-	a53_set_chr #4
+	a53_set_chr_safe #4
 	;set up sprite zero in OAM shadow buffer
 	ldy #<loadscreen_sprite0_data_size
 	dey
@@ -252,13 +256,13 @@ loop2:
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 
-	a53_set_prg img_pointer+img_DATA_PTR::img_PAL_LOC
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_PAL_LOC
 	lda img_pointer+img_DATA_PTR::img_PAL_PTR
 	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
 
-	a53_set_prg img_pointer+img_DATA_PTR::img_ATTR_LOC
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_ATTR_LOC
 	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
 	ldx img_pointer+img_DATA_PTR::img_ATTR_PTR+1
 	jsr load_ptr_temp1_16
@@ -267,8 +271,8 @@ loop2:
 
 	lda #0
 	sta s_A53_CHR_BANK
-	a53_set_chr s_A53_CHR_BANK
-	a53_set_prg img_pointer+img_DATA_PTR::img_BANK0_LOC
+	a53_set_chr_safe s_A53_CHR_BANK
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK0_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
 	jsr load_ptr_temp1_16
@@ -277,8 +281,8 @@ loop2:
 
 	lda #1
 	sta s_A53_CHR_BANK
-	a53_set_chr s_A53_CHR_BANK
-	a53_set_prg img_pointer+img_DATA_PTR::img_BANK1_LOC
+	a53_set_chr_safe s_A53_CHR_BANK
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
 	jsr load_ptr_temp1_16
@@ -287,8 +291,8 @@ loop2:
 
 	lda #2
 	sta s_A53_CHR_BANK
-	a53_set_chr s_A53_CHR_BANK
-	a53_set_prg img_pointer+img_DATA_PTR::img_BANK2_LOC
+	a53_set_chr_safe s_A53_CHR_BANK
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK2_LOC
 	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
 	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
 	jsr load_ptr_temp1_16
@@ -297,8 +301,10 @@ loop2:
 
 	pla
 	sta s_A53_CHR_BANK
-	a53_set_chr s_A53_CHR_BANK
-	a53_set_prg s_A53_PRG_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
 	
 	rts
 .endproc

@@ -22,6 +22,9 @@
 .global update_graphics
 .globalzp cur_keys, new_keys, oam_used
 
+; music.s
+.global start_music, run_music
+
 ; pads.s
 .global read_pads
 
