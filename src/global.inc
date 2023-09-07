@@ -39,4 +39,7 @@
 .globalzp img_index
 .globalzp nmi_occured
 
+; tokumaru/decompress.s_PPUCTRL
+.global DecompressTokumaru
+
 .endif

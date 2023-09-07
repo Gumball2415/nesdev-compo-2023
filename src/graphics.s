@@ -17,16 +17,14 @@ nmi_occured:  .res 1
 
 .segment "PRG0_8000"
 universal_tileset:
-	.incbin "obj/universal.chr"
+	.incbin "obj/universal.toku"
 
 img_0_bank0:
-	.incbin "obj/bank0.chr"
+	.incbin "obj/bank0.toku"
 img_0_bank1:
-	.incbin "obj/bank1.chr"
+	.incbin "obj/bank1.toku"
 img_0_bank2:
-	.incbin "obj/bank2.chr"
-
-.segment "PRG1_8000"
+	.incbin "obj/bank2.toku"
 img_0_pal:
 	.byte $0f,$00,$10,$30
 	.byte $0f,$01,$21,$31
@@ -52,9 +50,9 @@ img_0:
     .addr img_0_bank2
 	.byte 0
 	.addr img_0_pal
-	.byte 1
+	.byte 0
 	.addr img_0_attr
-	.byte 1 
+	.byte 0 
 
 ; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
@@ -91,17 +89,7 @@ loadscreen_sprite0_data:
 	sta PPUADDR
 	ldy #0
 	sty PPUADDR
-	ldx #>4096
-
-@loop:
-	lda (temp1_16),y
-	sta PPUDATA
-	iny
-	bne @loop
-
-	inc temp1_16+1
-	dex
-	bne @loop
+	jsr DecompressTokumaru
 
 	rts
 .endproc
@@ -328,39 +316,40 @@ loop2:
 	ldy #0
 	sty temp2_16+0
 	sty PPUADDR
-	ldx #>4096
+	jsr DecompressTokumaru
+	; ldx #>4096
 
-@loop:
-	; NMI interrupt check
-	; thanks Kasumi!
-	lda nmi_occured
-	bpl @skip_interrupt_fix
+; @loop:
+	; ; NMI interrupt check
+	; ; thanks Kasumi!
+	; lda nmi_occured
+	; bpl @skip_interrupt_fix
 
-	and #%01111111
-	sta nmi_occured
-	bit PPUSTATUS
-	lda temp2_16+1
-	sta PPUADDR
-	lda temp2_16+0
-	sta PPUADDR
+	; and #%01111111
+	; sta nmi_occured
+	; bit PPUSTATUS
+	; lda temp2_16+1
+	; sta PPUADDR
+	; lda temp2_16+0
+	; sta PPUADDR
 
-@skip_interrupt_fix:
-	lda (temp1_16),y
-	sta PPUDATA
-	inc temp2_16+0
-	bne @skip_high_inc
+; @skip_interrupt_fix:
+	; lda (temp1_16),y
+	; sta PPUDATA
+	; inc temp2_16+0
+	; bne @skip_high_inc
 
-	inc temp2_16+1
+	; inc temp2_16+1
 
-@skip_high_inc:
-	iny
-	bne @loop
+; @skip_high_inc:
+	; iny
+	; bne @loop
 
-	inc temp1_16+1
-	inc img_progress
-	dex
+	; inc temp1_16+1
+	; inc img_progress
+	; dex
 
-	bne @loop
+	; bne @loop
 
 	rts
 .endproc

@@ -17,7 +17,7 @@ version = 0.0.0
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = header main action53 pads graphics
+objlist = header main action53 pads graphics tokumaru/decompress
 
 
 AS65 = ca65 $(CFLAGS65)
@@ -29,7 +29,7 @@ objdir = obj
 srcdir = src
 imgdir = gfx
 outdir = output
-make_dirs = $(objdir) $(outdir)
+make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -80,8 +80,9 @@ $(objdir)/index.txt: makefile
 
 # make sure that files actually exist before deleting them
 clean:
-	if [ "$(wildcard $(objdir)/*)" ]; then rm -v $(objdir)/*; fi
-	if [ "$(wildcard $(outdir)/*)" ]; then rm -v $(outdir)/*; fi
+	if [ "$(wildcard $(objdir)/*)" ]; then rm -v -d -r $(objdir)/*; fi
+	if [ "$(wildcard $(outdir)/*)" ]; then rm -v -d -r $(outdir)/*; fi
+	cd tools/tokumaru && $(MAKE) clean
 
 build_dirs:
 	@mkdir -p $(make_dirs) 2>/dev/null
@@ -101,8 +102,8 @@ $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
 # Files that depend on .incbin'd files
-$(objdir)/graphics.o: $(objdir)/bank0.chr $(objdir)/bank1.chr $(objdir)/bank2.chr \
-	$(objdir)/universal.chr
+$(objdir)/graphics.o: $(objdir)/bank0.toku $(objdir)/bank1.toku $(objdir)/bank2.toku \
+	$(objdir)/universal.toku
 
 # This is an example of how to call a lookup table generator at
 # build time.  mktables.py itself is not included because the demo
@@ -113,8 +114,15 @@ $(objdir)/ntscPeriods.s: tools/mktables.py
 
 # Rules for CHR data
 
+$(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
+	tools/tokumaru/tokumaru -e -16 $< $@
+
+# TODO: raw images go here
 $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
+
+tools/tokumaru/tokumaru:
+	cd tools/tokumaru && $(MAKE) tokumaru
 
 # $(objdir)/%16.chr: $(imgdir)/%.png
 	# $(PY) tools/pilbmp2nes.py -H 16 $< $@
