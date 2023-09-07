@@ -106,9 +106,10 @@ program_table_hi:
 	lda sys_mode
 	and #sys_MODE_CHRTRANSFER
 	beq @skip
-	jsr chrtransfer_interrupt
-@skip:
 
+	jsr chrtransfer_interrupt
+
+@skip:
 	; run music
 
 	pla
@@ -127,8 +128,8 @@ program_table_hi:
 	; overwrite PPUCTRL
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
-
 	ldy #0
+
 @loopwait:
 	nop
 	dey
@@ -137,6 +138,7 @@ program_table_hi:
 @check_sprite0:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
+
 	; partial CHR load here
 	lda #0
 	sta PPUMASK
@@ -154,17 +156,6 @@ program_table_hi:
 .endproc
 
 .proc irq_handler
-	pha
-	tya
-	pha
-	txa
-	pha
-
-	pla
-	tax
-	pla
-	tay
-	pla
 	rti
 .endproc
 
@@ -218,7 +209,7 @@ program_table_hi:
 	sta shadow_palette,x
 	bne @clrspalette
 
-	; Set PRG bank
+	; Set PRG and CHR bank
 	jsr init_action53
 	lda #0
 	sta s_A53_CHR_BANK
@@ -233,7 +224,7 @@ program_table_hi:
 	; transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
 
-	; clear all CHR RAM, important for doing visual CHR loading
+	; clear all CHR RAM?
 	; jsr clear_all_chr
 	
 	; load universal tileset in sprite tileset
@@ -243,18 +234,21 @@ program_table_hi:
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
+
 	a53_set_chr #1
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
+
 	a53_set_chr #2
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
+
 	a53_set_chr #3
 	lda #<universal_tileset
 	ldx #>universal_tileset
@@ -311,11 +305,13 @@ wait_for_nmi:
 	ldx sys_state
 	cpx #STATE_ID::sys_ID_COUNT
 	bcs @end
+
 	lda program_table_lo,x
 	sta temp1_16+0
 	lda program_table_hi,x
 	sta temp1_16+1
 	jmp (temp1_16)
+
 @end:
 	; something has gone terribly wrong.
 	jmp @end
@@ -329,9 +325,9 @@ wait_for_nmi:
 	lda sys_mode
 	and #sys_MODE_CHRDONE
 	bne @continue
+
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
-
 	rts
 
 @continue:
@@ -340,16 +336,17 @@ wait_for_nmi:
 	lda cur_keys
 	and #KEY_LEFT|KEY_RIGHT|KEY_UP|KEY_DOWN
 	beq @skip
+
 	; change the image index
 	
 	; bug the system to transfer the new CHR
 	lda sys_mode
 	and #($FF - sys_MODE_CHRDONE)
 	sta sys_mode
+
 @skip:
 	; display raster bankswitched image
 	jsr gallery_display_kernel
-
 	rts
 .endproc
 
@@ -364,10 +361,11 @@ wait_for_nmi:
 
 	lda #$24
 	jsr set_gallery_loading_screen
-
+	
+	; let the system know we've already initialized the nametables
 	; let the NMI handler know that we're transferring CHR
 	lda sys_mode
-	ora #sys_MODE_CHRTRANSFER
+	ora #sys_MODE_GALLERYINIT|sys_MODE_CHRTRANSFER
 	sta sys_mode
 
 	jsr load_chr_bitmap
