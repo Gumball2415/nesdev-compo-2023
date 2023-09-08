@@ -50,7 +50,7 @@
 
 
 .segment "UNUSED"
-.res 42
+.res 42,0
 
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler

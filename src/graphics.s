@@ -60,10 +60,10 @@ img_0:
 
 ; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
-	.byte $56, $08, $00, $F8
+	.byte $56, $FF, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
 loadscreen_sprite0_data:
-	.byte $1E, $08, $00, $DF
+	.byte $1E, $FF, $00, $DF
 	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 ; copies the palette from shadow regs to PPU
 .proc transfer_palette
@@ -280,7 +280,6 @@ loop2:
 	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
-
 
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_ATTR_LOC
 	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
