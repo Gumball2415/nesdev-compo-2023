@@ -132,7 +132,7 @@ ft_song_list:
 ; Song info
 ft_song_0:
 	.word ft_s0_frames
-	.byte 10	; frame count
+	.byte 9	; frame count
 	.byte 64	; pattern length
 	.byte 0	; speed
 	.byte 150	; tempo
@@ -155,26 +155,23 @@ ft_s0_frames:
 	.word ft_s0f6
 	.word ft_s0f7
 	.word ft_s0f8
-	.word ft_s0f9
 ft_s0f0:
-	.word ft_s0p0c0, ft_s0p0c0, ft_s0p0c0, ft_s0p4c3, ft_s0p0c0
-ft_s0f1:
 	.word ft_s0p0c0, ft_s0p0c0, ft_s0p0c0, ft_s0p0c3, ft_s0p0c4
-ft_s0f2:
+ft_s0f1:
 	.word ft_s0p1c0, ft_s0p1c1, ft_s0p1c2, ft_s0p1c3, ft_s0p1c4
-ft_s0f3:
+ft_s0f2:
 	.word ft_s0p1c0, ft_s0p1c1, ft_s0p1c2, ft_s0p2c3, ft_s0p2c4
+ft_s0f3:
+	.word ft_s0p2c0, ft_s0p1c1, ft_s0p1c2, ft_s0p1c3, ft_s0p1c4
 ft_s0f4:
-	.word ft_s0p2c0, ft_s0p1c1, ft_s0p1c2, ft_s0p1c3, ft_s0p1c4
-ft_s0f5:
 	.word ft_s0p2c0, ft_s0p1c1, ft_s0p1c2, ft_s0p2c3, ft_s0p2c4
-ft_s0f6:
+ft_s0f5:
 	.word ft_s0p3c0, ft_s0p1c1, ft_s0p1c2, ft_s0p1c3, ft_s0p1c4
-ft_s0f7:
+ft_s0f6:
 	.word ft_s0p4c0, ft_s0p1c1, ft_s0p1c2, ft_s0p2c3, ft_s0p2c4
-ft_s0f8:
+ft_s0f7:
 	.word ft_s0p2c0, ft_s0p1c1, ft_s0p1c2, ft_s0p1c3, ft_s0p1c4
-ft_s0f9:
+ft_s0f8:
 	.word ft_s0p2c0, ft_s0p1c1, ft_s0p1c2, ft_s0p3c3, ft_s0p2c4
 ; Bank 0
 ft_s0p0c0:
@@ -267,11 +264,6 @@ ft_s0p4c0:
 	.byte $E7, $93, $02, $FC, $35, $00, $82, $01, $37, $3A, $3C, $35, $83, $37, $04, $7E, $03, $37, $01, $35
 	.byte $01, $33, $01, $35, $00, $33, $01, $32, $01, $2E, $02, $35, $00, $82, $01, $37, $3A, $3C, $3F, $83
 	.byte $3C, $04, $7E, $01, $43, $00, $82, $01, $41, $3F, $3C, $41, $3F, $83, $3E, $00, $3A, $00, $3C, $02
-
-; Bank 0
-ft_s0p4c3:
-	.byte $82, $00, $E0, $F1, $15, $F1, $00, $F2, $00, $F3, $00, $F3, $00, $F4, $00, $F5, $00, $83, $87, $01
-	.byte $F6, $00, $01, $F4, $00, $02, $F5, $00, $02, $87, $01, $F6, $00, $30
 
 
 ; DPCM samples (located at DPCM segment)

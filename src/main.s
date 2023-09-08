@@ -23,10 +23,10 @@ new_keys:       .res 2
 	; here, we have a budget of 10528 cycles before sprite 0 hits
 	; delay for a bit to ensure we're into the visible screen area at this point
 	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
-	ldy #0
+	ldy #$C8
 	:
 		nop
-		dey
+		iny
 		bne :-
 
 	inc s_A53_MUTEX
@@ -140,8 +140,9 @@ program_table_hi:
 	lda s_PPUCTRL
 	sta PPUCTRL
 	a53_set_chr s_A53_CHR_BANK
-	lda #%10000000
-	sta nmi_occured
+	lda sys_mode
+	ora #sys_MODE_NMIOCCURRED
+	sta sys_mode
 	bit PPUSTATUS
 	lda temp2_16+1
 	sta PPUADDR
@@ -195,14 +196,6 @@ program_table_hi:
 	lda #0
 	inx
 	bne @clrmem
-	; clean shadow palette
-
-	lda #$0F
-	ldx #32
-@clrspalette:
-	dex
-	sta shadow_palette,x
-	bne @clrspalette
 
 	; Set PRG and CHR bank
 	jsr init_action53
@@ -215,14 +208,20 @@ program_table_hi:
 @vblankwait2:
 	bit PPUSTATUS
 	bpl @vblankwait2
-	
-	; transfer palettes so that we don't linger on a dead screen
-	jsr transfer_palette
 
 	; clear all CHR RAM?
 	; jsr clear_all_chr
 	
-	; load universal tileset in sprite tileset
+	; load universal tileset and palette
+
+	lda #<universal_pal
+	ldx #>universal_pal
+	jsr load_ptr_temp1_16
+	jsr transfer_img_pal
+	
+	; transfer palettes so that we don't linger on a dead screen
+	jsr transfer_palette
+
 	a53_set_chr #0
 	lda #<universal_tileset
 	ldx #>universal_tileset
@@ -257,6 +256,10 @@ program_table_hi:
 	jsr transfer_4k_chr
 
 	a53_set_chr s_A53_CHR_BANK
+
+	lda sys_mode
+	ora #sys_MODE_NMIOAM|sys_MODE_NMIPAL
+	sta sys_mode
 
 	; enable NMI immediately
 	lda #VBLANK_NMI|OBJ_1000
@@ -320,7 +323,6 @@ wait_for_nmi:
 	lda sys_mode
 	and #sys_MODE_CHRDONE
 	bne @continue
-
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
 	rts
@@ -341,6 +343,7 @@ wait_for_nmi:
 
 @skip:
 	; display raster bankswitched image
+
 	jsr gallery_display_kernel
 	rts
 .endproc
@@ -388,14 +391,28 @@ wait_for_nmi:
 	sta PPUMASK				; disable rendering
 	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
 	; transfer OAM
+	lda sys_mode
+	and #sys_MODE_NMIOAM
+	beq @skip_oam
+
 	lda #0
 	sta OAMADDR
 	lda #>SHADOW_OAM
 	sta OAM_DMA
-	
+
+@skip_oam:
+	lda sys_mode
+	and #sys_MODE_NMIPAL
+	beq @skip_pal
+
 	; transfer palettes
 	jsr transfer_palette
-	
+	lda sys_mode
+	and #($FF - sys_MODE_NMIPAL)
+	sta sys_mode
+
+@skip_pal:
+
 	; update scroll
 	jsr update_scrolling
 	

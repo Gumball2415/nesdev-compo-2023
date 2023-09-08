@@ -12,22 +12,27 @@
 sys_MODE_CHRTRANSFER = %00000001
 sys_MODE_CHRDONE     = %00000010
 sys_MODE_GALLERYINIT = %00000100
+sys_MODE_NMIPAL      = %00001000
+sys_MODE_NMIOAM      = %00010000
+
+sys_MODE_NMIOCCURRED = %10000000
 
 
 .struct img_DATA_PTR
 	; PTR: pointer to data
 	; LOC: PRG bank number which it resides in
+	img_PAL_PTR .word
+	img_ATTR_PTR .word
 	img_BANK0_PTR .word
-	img_BANK0_LOC .byte
 	img_BANK1_PTR .word
-	img_BANK1_LOC .byte
 	img_BANK2_PTR .word
+
+	img_PAL_LOC .byte
+	img_ATTR_LOC .byte
+	img_BANK0_LOC .byte
+	img_BANK1_LOC .byte
 	img_BANK2_LOC .byte
 
-	img_PAL_PTR .word
-	img_PAL_LOC .byte
-	img_ATTR_PTR .word
-	img_ATTR_LOC .byte
 	img_DATA_PTR_SIZE .byte
 .endstruct
 .endif

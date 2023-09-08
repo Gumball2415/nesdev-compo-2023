@@ -12,14 +12,16 @@ ppu_scroll_y: .res 1
 img_progress: .res 1
 img_index:    .res 1
 img_pointer:  .tag img_DATA_PTR
-nmi_occured:  .res 1
 
 
 
 .segment "PRG0_8000"
 universal_tileset:
 	.incbin "obj/universal.toku"
-
+universal_pal:
+	.repeat 8
+		.byte $0F,$03,$24,$30
+	.endrepeat
 img_0_bank0:
 	.incbin "obj/bank0.toku"
 img_0_bank1:
@@ -45,15 +47,15 @@ img_table:
 	.addr img_0
 
 img_0:
+	.addr img_0_pal
+	.addr img_0_attr
     .addr img_0_bank0
-	.byte 0
     .addr img_0_bank1
-	.byte 0
     .addr img_0_bank2
 	.byte 0
-	.addr img_0_pal
 	.byte 0
-	.addr img_0_attr
+	.byte 0
+	.byte 0
 	.byte 0 
 
 ; sprite 0 hit happens precisely on this pixel
@@ -88,9 +90,11 @@ loadscreen_sprite0_data:
 ; @param temp1_16 pointer to compressed chr data
 .proc transfer_4k_chr
 	bit PPUSTATUS
+	sta temp2_16+1
 	sta PPUADDR
 	ldy #0
 	sty PPUADDR
+	sta temp2_16+0
 	jsr DecompressTokumaru
 
 	rts
@@ -253,15 +257,30 @@ loop2:
 		sta SHADOW_OAM, y
 		dey
 		bpl :-
+	
+	a53_set_prg_safe #0
+	lda #<universal_pal
+	ldx #>universal_pal
+	jsr load_ptr_temp1_16
+	jsr transfer_img_pal
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
 
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
+
+	lda nmis
+@wait_nmi:
+	cmp nmis
+	beq @wait_nmi
 
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_PAL_LOC
 	lda img_pointer+img_DATA_PTR::img_PAL_PTR
 	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
+
 
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_ATTR_LOC
 	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
@@ -278,21 +297,25 @@ loop2:
 	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
-	jsr transfer_4k_chr_nmi_safe
+	jsr transfer_4k_chr
 
 	lda #1
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
 	lda #$00
-	jsr transfer_4k_chr_nmi_safe
+	jsr transfer_4k_chr
 
 	lda #2
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK2_LOC
 	lda #$00
-	jsr transfer_4k_chr_nmi_safe
+	jsr transfer_4k_chr
+
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
 
 	pla
 	sta s_A53_CHR_BANK
@@ -301,57 +324,6 @@ loop2:
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
 	
-	rts
-.endproc
-
-;;
-; decompresses and transfers 4K chr data to PPU, being interrupt safe
-; designed to be interrupt resistant
-; @param A base address of CHR page ($00 or $10)
-; @param temp1_16 pointer to compressed chr data
-; @param temp2_16 shadow pointer to PPUADDR
-.proc transfer_4k_chr_nmi_safe
-	bit PPUSTATUS
-	sta temp2_16+1
-	sta PPUADDR
-	ldy #0
-	sty temp2_16+0
-	sty PPUADDR
-	jsr DecompressTokumaru
-	; ldx #>4096
-
-; @loop:
-	; ; NMI interrupt check
-	; ; thanks Kasumi!
-	; lda nmi_occured
-	; bpl @skip_interrupt_fix
-
-	; and #%01111111
-	; sta nmi_occured
-	; bit PPUSTATUS
-	; lda temp2_16+1
-	; sta PPUADDR
-	; lda temp2_16+0
-	; sta PPUADDR
-
-; @skip_interrupt_fix:
-	; lda (temp1_16),y
-	; sta PPUDATA
-	; inc temp2_16+0
-	; bne @skip_high_inc
-
-	; inc temp2_16+1
-
-; @skip_high_inc:
-	; iny
-	; bne @loop
-
-	; inc temp1_16+1
-	; inc img_progress
-	; dex
-
-	; bne @loop
-
 	rts
 .endproc
 
@@ -378,36 +350,20 @@ loop2:
 ; @param temp2_16 shadow pointer to PPUADDR
 .proc transfer_img_attr
 	bit PPUSTATUS
-	lda temp2_16+1
+	sta temp2_16+1
 	sta PPUADDR
 	lda #$C0
-	lda temp2_16+0
+	sta temp2_16+0
 	sta PPUADDR
 	ldy #0
 
 @loop:
 	; NMI interrupt check
 	; thanks Kasumi!
-	lda nmi_occured
-	bpl @skip_interrupt_fix
-
-	and #%01111111
-	sta nmi_occured
-	bit PPUSTATUS
-	lda temp2_16+1
-	sta PPUADDR
-	lda temp2_16+0
-	sta PPUADDR
-
-@skip_interrupt_fix:
+	jsr sync_ppuaddr_ptr
 	lda (temp1_16),y
 	sta PPUDATA
-	inc temp2_16+0
-	bne @skip_high_inc
-
-	inc temp2_16+1
-
-@skip_high_inc:
+	jsr inc_ppuaddr_ptr
 	iny
 	cpy #64
 	bne @loop
@@ -510,13 +466,13 @@ txt_now_loading:
 
 .proc sync_ppuaddr_ptr
 
-	bit nmi_occured
+	bit sys_mode
 	bpl @skip_sync
 
 	pha
-	lda nmi_occured
-	and #%01111111
-	sta nmi_occured
+	lda sys_mode
+	and #($FF - sys_MODE_NMIOCCURRED)
+	sta sys_mode
 	bit PPUSTATUS
 	lda temp2_16+1
 	sta PPUADDR
@@ -529,6 +485,16 @@ txt_now_loading:
 .endproc
 
 .proc inc_ppuaddr_ptr
+	inc temp2_16+0
+	bne @skip_inc
+
+	inc temp2_16+1
+
+@skip_inc:
+	rts
+.endproc
+
+.proc inc_ppuaddr_ptr_chr
 	inc temp2_16+0
 	bne @skip_inc
 

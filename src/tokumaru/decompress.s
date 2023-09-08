@@ -103,8 +103,6 @@ ReadBit_Ytemp:   .res 1
 
 
 ; Inputs:
-.importzp nmi_occured
-.importzp img_progress
 .importzp temp1_16
 .importzp temp2_16
 
@@ -361,7 +359,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	lda Plane0
 	sta PPUDATA
-	jsr inc_ppuaddr_ptr
+	jsr inc_ppuaddr_ptr_chr
 
 	lda Plane1
 .if RAMBUFFER=1
@@ -383,7 +381,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	lda Part2,x
 	sta PPUDATA
-	jsr inc_ppuaddr_ptr
+	jsr inc_ppuaddr_ptr_chr
 
 	dex
 	bpl :-
@@ -413,7 +411,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	ldy $100,x
 	sty PPUDATA
-	jsr inc_ppuaddr_ptr
+	jsr inc_ppuaddr_ptr_chr
 
 	dex
 	cpx @old
