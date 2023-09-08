@@ -12,6 +12,7 @@ ppu_scroll_y: .res 1
 img_progress: .res 1
 img_index:    .res 1
 img_pointer:  .tag img_DATA_PTR
+oam_size:     .res 1
 
 
 
@@ -22,12 +23,7 @@ universal_pal:
 	.repeat 8
 		.byte $0F,$03,$24,$30
 	.endrepeat
-img_0_bank0:
-	.incbin "obj/bank0.toku"
-img_0_bank1:
-	.incbin "obj/bank1.toku"
-img_0_bank2:
-	.incbin "obj/bank2.toku"
+
 img_0_pal:
 	.byte $30,$12,$0F,$22
 	.byte $30,$01,$21,$31
@@ -37,26 +33,39 @@ img_0_pal:
 	.byte $30,$01,$21,$31
 	.byte $30,$06,$16,$26
 	.byte $30,$09,$19,$29
-
 img_0_attr:
 	.res 64, 0
+img_0_oam:
+	.res $FF, $FF ; sprite 0 is skipped
+img_0_bank0:
+	.incbin "obj/bank0.toku"
+img_0_bank1:
+	.incbin "obj/bank1.toku"
+img_0_bank2:
+	.incbin "obj/bank2.toku"
+img_0_bank3:
+	.incbin "obj/bank3.toku"
 
 
 .segment "PRGFIXED_C000"
-img_table:
-	.addr img_0
-
 img_0:
 	.addr img_0_pal
 	.addr img_0_attr
+    .addr img_0_oam
     .addr img_0_bank0
     .addr img_0_bank1
     .addr img_0_bank2
+    .addr img_0_bank3
 	.byte 0
 	.byte 0
 	.byte 0
 	.byte 0
-	.byte 0 
+	.byte 0
+	.byte 0
+	.byte 0
+
+img_table:
+	.addr img_0
 
 ; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
@@ -65,7 +74,9 @@ gallery_sprite0_data:
 loadscreen_sprite0_data:
 	.byte $1E, $FF, $00, $DF
 	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
+
 ; copies the palette from shadow regs to PPU
+; not interrupt safe!
 .proc transfer_palette
 	bit PPUSTATUS
 	lda #$3F
@@ -93,8 +104,8 @@ loadscreen_sprite0_data:
 	sta temp2_16+1
 	sta PPUADDR
 	ldy #0
+	sty temp2_16+0
 	sty PPUADDR
-	sta temp2_16+0
 	jsr DecompressTokumaru
 
 	rts
@@ -234,6 +245,7 @@ loop2:
 
 	ldy #0
 	sty img_progress
+	sty oam_size
 
 @ptr_load:
 	lda (temp1_16),y
@@ -241,24 +253,26 @@ loop2:
 	iny
 	cpy #img_DATA_PTR::img_DATA_PTR_SIZE
 	bne @ptr_load
+	
+	; setup loading screen
 
-	; save current PRG bank
+	; save current PRG and CHR bank
 	lda s_A53_PRG_BANK
 	pha
-	; setup loading screen
 	lda s_A53_CHR_BANK
 	pha
-	a53_set_chr_safe #4
 	;set up sprite zero in OAM shadow buffer
 	ldy #<loadscreen_sprite0_data_size
 	dey
 	:
 		lda loadscreen_sprite0_data, y
 		sta SHADOW_OAM, y
+		inc oam_size
 		dey
 		bpl :-
 	
 	a53_set_prg_safe #0
+	a53_set_chr_safe #3
 	lda #<universal_pal
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
@@ -287,7 +301,15 @@ loop2:
 	jsr load_ptr_temp1_16
 	lda #$23
 	jsr transfer_img_attr
+	
 
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_OAM_LOC
+	lda img_pointer+img_DATA_PTR::img_OAM_PTR
+	ldx img_pointer+img_DATA_PTR::img_OAM_PTR+1
+	jsr load_ptr_temp1_16
+	jsr transfer_img_oam
+
+	; transfer BG CHR banks
 	lda #0
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
@@ -297,19 +319,41 @@ loop2:
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-
-	lda #1
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
-	lda #$00
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
 	jsr transfer_4k_chr
 
-	lda #2
-	sta s_A53_CHR_BANK
+	inc s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$00
+	jsr transfer_4k_chr
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
+	jsr transfer_4k_chr
+
+	inc s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK2_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
+	jsr load_ptr_temp1_16
 	lda #$00
+	jsr transfer_4k_chr
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
 	jsr transfer_4k_chr
 
 	lda sys_mode
@@ -337,6 +381,21 @@ loop2:
 	sta shadow_palette,y
 	iny
 	cpy #32
+	bne @loop
+
+	rts
+.endproc
+
+;;
+; decompresses and transfers metasprite data to shadow OAM
+; @param temp1_16 pointer to compressed palette data
+.proc transfer_img_oam
+	ldy oam_size
+
+@loop:
+	lda (temp1_16),y
+	sta SHADOW_OAM,y
+	iny
 	bne @loop
 
 	rts
@@ -450,21 +509,24 @@ txt_now_loading:
 
 	lda img_progress
 	lsr a
+	lsr a
+	cmp #24
+	beq @skip_update
 	tax
+	lda #$03
 	; by the time we reach this point, the progress has already been incremented
 	inx
-	lda #$03
 
 @loop1:
     sta PPUDATA
 	dex
 	bne @loop1
 
+@skip_update:
 	rts
 .endproc
 
 .proc sync_ppuaddr_ptr
-
 	bit sys_mode
 	bpl @skip_sync
 
@@ -484,16 +546,6 @@ txt_now_loading:
 .endproc
 
 .proc inc_ppuaddr_ptr
-	inc temp2_16+0
-	bne @skip_inc
-
-	inc temp2_16+1
-
-@skip_inc:
-	rts
-.endproc
-
-.proc inc_ppuaddr_ptr_chr
 	inc temp2_16+0
 	bne @skip_inc
 

@@ -42,6 +42,7 @@
 .globalzp img_progress
 .globalzp img_index
 .globalzp nmi_occured
+.globalzp oam_size
 
 ; tokumaru/decompress.s_PPUCTRL
 .global DecompressTokumaru

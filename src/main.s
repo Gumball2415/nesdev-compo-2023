@@ -124,6 +124,7 @@ program_table_hi:
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 	ldy #0
+	a53_set_chr #3
 
 @loopwait:
 	nop
@@ -221,27 +222,6 @@ program_table_hi:
 	
 	; transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
-
-	a53_set_chr #0
-	lda #<universal_tileset
-	ldx #>universal_tileset
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
-
-	a53_set_chr #1
-	lda #<universal_tileset
-	ldx #>universal_tileset
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
-
-	a53_set_chr #2
-	lda #<universal_tileset
-	ldx #>universal_tileset
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
 
 	a53_set_chr #3
 	lda #<universal_tileset
@@ -374,7 +354,7 @@ wait_for_nmi:
 	ora #sys_MODE_CHRDONE
 	sta sys_mode
 
-	;set up sprite zero in OAM shadow buffer
+	;overwrite sprite zero coordinates in OAM shadow buffer
 	ldy #<gallery_sprite0_data_size
 	dey
 	@copy:

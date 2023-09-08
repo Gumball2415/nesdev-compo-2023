@@ -21,17 +21,21 @@ sys_MODE_NMIOCCURRED = %10000000
 .struct img_DATA_PTR
 	; PTR: pointer to data
 	; LOC: PRG bank number which it resides in
-	img_PAL_PTR .word
-	img_ATTR_PTR .word
-	img_BANK0_PTR .word
-	img_BANK1_PTR .word
-	img_BANK2_PTR .word
+	img_PAL_PTR .addr
+	img_ATTR_PTR .addr
+	img_OAM_PTR .addr
+	img_BANK0_PTR .addr
+	img_BANK1_PTR .addr
+	img_BANK2_PTR .addr
+	img_BANK3_PTR .addr
 
 	img_PAL_LOC .byte
 	img_ATTR_LOC .byte
+	img_OAM_LOC .byte
 	img_BANK0_LOC .byte
 	img_BANK1_LOC .byte
 	img_BANK2_LOC .byte
+	img_BANK3_LOC .byte
 
 	img_DATA_PTR_SIZE .byte
 .endstruct

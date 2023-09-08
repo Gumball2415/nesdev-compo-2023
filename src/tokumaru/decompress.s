@@ -359,7 +359,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	lda Plane0
 	sta PPUDATA
-	jsr inc_ppuaddr_ptr_chr
+	jsr inc_ppuaddr_ptr
 
 	lda Plane1
 .if RAMBUFFER=1
@@ -381,7 +381,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	lda Part2,x
 	sta PPUDATA
-	jsr inc_ppuaddr_ptr_chr
+	jsr inc_ppuaddr_ptr
 
 	dex
 	bpl :-
@@ -411,7 +411,7 @@ DecompressTokumaru:
 	jsr sync_ppuaddr_ptr
 	ldy $100,x
 	sty PPUDATA
-	jsr inc_ppuaddr_ptr_chr
+	jsr inc_ppuaddr_ptr
 
 	dex
 	cpx @old

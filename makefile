@@ -101,8 +101,8 @@ $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
 # Files that depend on .incbin'd files
-$(objdir)/graphics.o: $(objdir)/bank0.toku $(objdir)/bank1.toku $(objdir)/bank2.toku \
-	$(objdir)/universal.toku
+$(objdir)/graphics.o: $(objdir)/universal.toku \
+	$(objdir)/bank0.toku $(objdir)/bank1.toku $(objdir)/bank2.toku $(objdir)/bank3.toku 
 
 # This is an example of how to call a lookup table generator at
 # build time.  mktables.py itself is not included because the demo
