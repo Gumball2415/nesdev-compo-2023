@@ -82,7 +82,6 @@ $(objdir)/index.txt: makefile
 clean:
 	if [ "$(wildcard $(objdir)/*)" ]; then rm -v -d -r $(objdir)/*; fi
 	if [ "$(wildcard $(outdir)/*)" ]; then rm -v -d -r $(outdir)/*; fi
-	cd tools/tokumaru && $(MAKE) clean
 
 build_dirs:
 	@mkdir -p $(make_dirs) 2>/dev/null
@@ -120,6 +119,9 @@ $(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
 # TODO: raw images go here
 $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
+
+ $(imgdir)/%.chr: $(imgdir)/%.bmp
+	tools/pilbmp2nes.py $< $@
 
 tools/tokumaru/tokumaru:
 	cd tools/tokumaru && $(MAKE) tokumaru

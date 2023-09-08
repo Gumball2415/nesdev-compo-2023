@@ -27,14 +27,15 @@ img_0_bank1:
 img_0_bank2:
 	.incbin "obj/bank2.toku"
 img_0_pal:
-	.byte $0f,$00,$10,$30
-	.byte $0f,$01,$21,$31
-	.byte $0f,$06,$16,$26
-	.byte $0f,$09,$19,$29
-	.byte $0f,$00,$10,$30
-	.byte $0f,$01,$21,$31
-	.byte $0f,$06,$16,$26
-	.byte $0f,$09,$19,$29
+	.byte $30,$12,$0F,$22
+	.byte $30,$01,$21,$31
+	.byte $30,$06,$16,$26
+	.byte $30,$09,$19,$29
+	.byte $30,$00,$0F,$10
+	.byte $30,$01,$21,$31
+	.byte $30,$06,$16,$26
+	.byte $30,$09,$19,$29
+
 img_0_attr:
 	.res 64, 0
 
@@ -283,9 +284,6 @@ loop2:
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
-	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr_nmi_safe
 
@@ -293,9 +291,6 @@ loop2:
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK2_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
-	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr_nmi_safe
 
@@ -510,5 +505,36 @@ txt_now_loading:
 	dex
 	bne @loop1
 
+	rts
+.endproc
+
+.proc sync_ppuaddr_ptr
+
+	bit nmi_occured
+	bpl @skip_sync
+
+	pha
+	lda nmi_occured
+	and #%01111111
+	sta nmi_occured
+	bit PPUSTATUS
+	lda temp2_16+1
+	sta PPUADDR
+	lda temp2_16+0
+	sta PPUADDR
+	pla
+
+@skip_sync:
+	rts
+.endproc
+
+.proc inc_ppuaddr_ptr
+	inc temp2_16+0
+	bne @skip_inc
+
+	inc temp2_16+1
+	inc img_progress
+
+@skip_inc:
 	rts
 .endproc

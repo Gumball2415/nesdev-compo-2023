@@ -111,55 +111,6 @@ ReadBit_Ytemp:   .res 1
 
 .segment "DECOMPRESS"
 
-.proc sync_ppuaddr_ptr
-	pha
-	tya
-	pha
-	txa
-	pha
-
-	lda nmi_occured
-	bpl @skip_sync
-
-	and #%01111111
-	sta nmi_occured
-	bit PPUSTATUS
-	lda temp2_16+1
-	sta PPUADDR
-	lda temp2_16+0
-	sta PPUADDR
-
-@skip_sync:
-	pla
-	tax
-	pla
-	tay
-	pla
-	rts
-.endproc
-
-.proc inc_ppuaddr_ptr
-	pha
-	tya
-	pha
-	txa
-	pha
-
-	inc temp2_16+0
-	bne @skip_inc
-
-	inc temp2_16+1
-	inc img_progress
-
-@skip_inc:
-	pla
-	tax
-	pla
-	tay
-	pla
-	rts
-.endproc
-
 .export DecompressTokumaru
 DecompressTokumaru:
 	; Input:  temp1_16 = pointer to input data

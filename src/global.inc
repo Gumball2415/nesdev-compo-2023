@@ -33,6 +33,7 @@
 .global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .global set_gallery_nametable, set_gallery_loading_screen
 .global gallery_sprite0_data, gallery_sprite0_data_size, update_progress_bar
+.global sync_ppuaddr_ptr, inc_ppuaddr_ptr
 .globalzp shadow_palette
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK
