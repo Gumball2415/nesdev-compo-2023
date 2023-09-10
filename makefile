@@ -33,7 +33,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music/no_guarantees
-make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru  $(imgdirlistmac)
+make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru $(imgdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -57,9 +57,11 @@ DOTEXE:=
 PY:=
 endif
 
-.PHONY: build_dirs all dist zip clean
+.PHONY: build_dirs all dist zip clean rebuild
 
 all: build_dirs $(outdir)/$(title)-$(version).nes
+
+rebuild: clean build_dirs $(outdir)/$(title)-$(version).nes
 
 # Rule to create or update the distribution zipfile by adding all
 # files listed in zip.in.  Actually the zipfile depends on every
@@ -107,7 +109,7 @@ $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
 # Files that depend on .incbin'd files
-$(objdir)/music.o: $(objdir)/music.asm 
+$(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
 	$(imglistmac) \
