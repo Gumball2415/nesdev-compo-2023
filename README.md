@@ -8,6 +8,8 @@ Main collaborators:
 - Persune (Gumball2415)
 - Kagamiin
 
+"SHVTERA" is an amalgamation of "shutter", i.e. the one in a camera. this is dedicated to my friends who make amazing art, and i wanted to capture them with a camera of my own, i.e. this entry.
+
 ## Compiling
 
 Dependencies (these must be available in path):
@@ -28,7 +30,7 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 - Inspiration: forple, Lockster
 - Initial template: PinoBatch, yoeynsf
 - Action53 configuration and mapper helper functions: zeta0134
-- Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf, Kagamiin
+- Programming help: lidnariq, zeta0134, rainwarrior, CutterCross, yoeynsf, Kagamiin, Kasumi
 - General assistance: the NESDev Discord server
 
 Thanks so much for your wonderful help!!

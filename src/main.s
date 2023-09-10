@@ -13,17 +13,19 @@ sys_mode:       .res 1
 
 nmis:           .res 1
 oam_used:       .res 1  ; starts at 0
+shadow_oam_ptr: .res 2
 cur_keys:       .res 2
 new_keys:       .res 2
 
 .segment "PRGFIXED_C000"
 
 ; these routines are sensitive to page crosses
-.proc gallery_display_kernel
+.proc gallery_display_kernel_ntsc
 	; here, we have a budget of 10528 cycles before sprite 0 hits
 	; delay for a bit to ensure we're into the visible screen area at this point
 	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
 	ldy #$C8
+
 	:
 		nop
 		iny
@@ -43,13 +45,17 @@ new_keys:       .res 2
 	lda #1
 	sta A53_REG_VALUE
 
+
+
 	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
 	; exactly 64 scanlines
 	lda #%00010000                   ;    2    2  DMC active status bit
 	and SNDCHN                       ;    4    6
 	c_bne @skip_pre_delay            ;    3    9  compensate for cycles stolen by DMC DMA
 	;                                ;   -1    8    (measured approx. 32-36 cycles)
+
 	ldy #7                           ;    2   10
+
 	@loop:
 		dey         ;  2  2
 		c_bne @loop ;  3  5
@@ -58,18 +64,22 @@ new_keys:       .res 2
 
 @skip_pre_delay:
 	ldx #12                          ;    2   46
+
 	@delay:
 		ldy #119                          ;   2   2
+
 		@inner:
 			dey                           ;  2  2
 			c_bne @inner                  ;  3  5
 			;                             ; -1
+
 		;                                 ; 594 596
 		dex                               ;   2 598
 		c_bne @delay                      ;   3 601
 		;                                 ;  -1
+
 	;                                ; 7211 7257
-	ldx #0                           ;    3 7260  dummy
+	ldx $0                           ;    3 7260  dummy
 	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
 
 	dec s_A53_MUTEX
@@ -118,7 +128,9 @@ program_table_hi:
 .proc chrtransfer_interrupt
 	lda #$24
 	jsr update_progress_bar
-
+	; use shadow oam 2 for sprite 0 hit
+	lda #$06
+	sta shadow_oam_ptr+1
 	jsr update_graphics
 	; overwrite PPUCTRL
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
@@ -141,6 +153,8 @@ program_table_hi:
 	lda s_PPUCTRL
 	sta PPUCTRL
 	a53_set_chr s_A53_CHR_BANK
+	lda #$07
+	sta shadow_oam_ptr+1
 	lda sys_mode
 	ora #sys_MODE_NMIOCCURRED
 	sta sys_mode
@@ -192,11 +206,17 @@ program_table_hi:
 	sta $500,x
 	sta $600,x
 	sta $700,x
+	; clear shadow OAM 1 and 2
 	lda #$FF
-	sta SHADOW_OAM,x
+	sta $0700,x
+	sta $0600,x
 	lda #0
 	inx
 	bne @clrmem
+
+	; set shadow OAM page
+	lda #$07
+	sta shadow_oam_ptr+1
 
 	; Set PRG and CHR bank
 	jsr init_action53
@@ -223,6 +243,7 @@ program_table_hi:
 	; transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
 
+	; set up universal bank
 	a53_set_chr #3
 	lda #<universal_tileset
 	ldx #>universal_tileset
@@ -237,12 +258,13 @@ program_table_hi:
 
 	a53_set_chr s_A53_CHR_BANK
 
+	; initialize NMI handler flags
 	lda sys_mode
 	ora #sys_MODE_NMIOAM|sys_MODE_NMIPAL
 	sta sys_mode
 
 	; enable NMI immediately
-	lda #VBLANK_NMI|OBJ_1000
+	lda #NT_2000|OBJ_1000|BG_0000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 
@@ -302,20 +324,30 @@ wait_for_nmi:
 .proc gallery_subroutine
 	lda sys_mode
 	and #sys_MODE_CHRDONE
-	bne @continue
+	bne @skip_init
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
 	rts
 
-@continue:
-	; run logic
-	; todo:  refer to "docs/state machine diagram or whatevs.png" 
-	lda cur_keys
-	and #KEY_LEFT|KEY_RIGHT|KEY_UP|KEY_DOWN
-	beq @skip
 
-	; change the image index
-	
+
+@skip_init:
+	; run logic
+	; todo:  refer to "docs/state machine diagram or whatevs.png"
+	lda cur_keys
+	and #KEY_LEFT
+	beq @check_right
+
+	jsr gallery_left
+	jmp @img_index_epilogue
+
+@check_right:
+	lda cur_keys
+	and #KEY_RIGHT
+	beq @skip
+	jsr gallery_right
+
+@img_index_epilogue:
 	; bug the system to transfer the new CHR
 	lda sys_mode
 	and #($FF - sys_MODE_CHRDONE)
@@ -323,8 +355,41 @@ wait_for_nmi:
 
 @skip:
 	; display raster bankswitched image
+	jsr gallery_display_kernel_ntsc
+	rts
 
-	jsr gallery_display_kernel
+
+
+; helper functions
+gallery_left:
+	; change the image index
+	lda img_index
+	beq @wrap_up
+
+	dec img_index
+	jmp @left_end
+
+@wrap_up:
+	lda #<(img_table_size/2)-1
+	sta img_index
+@left_end:
+	rts
+
+
+gallery_right:
+	; change the image index
+	lda img_index
+	cmp #<(img_table_size/2)-1
+	beq @wrap_down
+
+	inc img_index
+	jmp @right_end
+
+@wrap_down:
+	lda #0
+	sta img_index
+
+@right_end:
 	rts
 .endproc
 
@@ -353,16 +418,6 @@ wait_for_nmi:
 	and #($FF - sys_MODE_CHRTRANSFER)
 	ora #sys_MODE_CHRDONE
 	sta sys_mode
-
-	;overwrite sprite zero coordinates in OAM shadow buffer
-	ldy #<gallery_sprite0_data_size
-	dey
-	@copy:
-		lda gallery_sprite0_data, y
-		sta SHADOW_OAM, y
-		dey
-		bpl @copy
-
 	rts
 .endproc
 
@@ -377,7 +432,7 @@ wait_for_nmi:
 
 	lda #0
 	sta OAMADDR
-	lda #>SHADOW_OAM
+	lda shadow_oam_ptr+1
 	sta OAM_DMA
 
 @skip_oam:

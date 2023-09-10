@@ -9,7 +9,7 @@ music_is_playing:  .res 1
 
 bhop_music_data:
 	.scope music_data
-	.include "../music/no_guarantees/music.asm"
+	.include "../obj/music.asm"
 	.endscope
 	;.export bhop_music_data
 

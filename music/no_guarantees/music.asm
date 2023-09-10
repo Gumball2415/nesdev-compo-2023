@@ -21,6 +21,7 @@ ft_instrument_list:
 	.word ft_inst_5
 	.word ft_inst_6
 	.word ft_inst_7
+	.word ft_inst_8
 
 ; Instruments
 ft_inst_0:
@@ -73,6 +74,10 @@ ft_inst_7:
 	.word ft_seq_2a03_26
 	.word ft_seq_2a03_2
 
+ft_inst_8:
+	.byte 0
+	.byte $00
+
 ; Sequences
 ft_seq_2a03_0:
 	.byte $21, $FF, $00, $00, $0B, $09, $08, $07, $07, $06, $06, $06, $05, $05, $04, $04, $04, $04, $04, $03
@@ -112,12 +117,14 @@ ft_sample_list:
 	.byte 12, 32, 0
 	.byte 12, 32, 3
 	.byte 12, 32, 6
+	.byte 204, 255, 9
 
 ; DPCM samples list (location, size, bank)
 ft_samples:
 	.byte <((ft_sample_0 - $C000) >> 6), 58, <.bank(ft_sample_0)
 	.byte <((ft_sample_1 - $C000) >> 6), 17, <.bank(ft_sample_1)
 	.byte <((ft_sample_2 - $C000) >> 6), 23, <.bank(ft_sample_2)
+	.byte <((ft_sample_3 - $C000) >> 6), 7, <.bank(ft_sample_3)
 
 ; Groove list
 ft_groove_list:
@@ -144,7 +151,7 @@ ft_song_1:
 	.word ft_s1_frames
 	.byte 1	; frame count
 	.byte 64	; pattern length
-	.byte 6	; speed
+	.byte 4	; speed
 	.byte 150	; tempo
 	.byte 0	; groove position
 	.byte 0	; initial bank
@@ -257,9 +264,10 @@ ft_s0p2c4:
 
 ; Bank 0
 ft_s0p3c0:
-	.byte $E7, $93, $02, $FC, $29, $00, $82, $01, $2B, $2E, $30, $29, $83, $2B, $04, $7E, $03, $2B, $01, $29
-	.byte $01, $27, $01, $29, $00, $27, $01, $26, $01, $22, $02, $29, $00, $82, $01, $2B, $2E, $30, $33, $83
-	.byte $30, $04, $7E, $01, $37, $00, $82, $01, $35, $33, $30, $35, $33, $83, $32, $00, $2E, $00, $30, $02
+	.byte $E7, $93, $02, $FC, $29, $00, $82, $01, $2B, $2E, $30, $29, $83, $2B, $04, $7E, $02, $94, $0A, $29
+	.byte $00, $94, $02, $2B, $01, $29, $01, $27, $01, $29, $00, $27, $01, $26, $01, $22, $02, $29, $00, $82
+	.byte $01, $2B, $2E, $30, $33, $83, $30, $04, $7E, $00, $94, $05, $35, $00, $94, $02, $37, $00, $82, $01
+	.byte $35, $33, $30, $35, $33, $83, $32, $00, $2E, $00, $30, $02
 
 ; Bank 0
 ft_s0p3c3:
@@ -271,18 +279,33 @@ ft_s0p3c3:
 
 ; Bank 0
 ft_s0p4c0:
-	.byte $E7, $93, $02, $FC, $35, $00, $82, $01, $37, $3A, $3C, $35, $83, $37, $04, $7E, $03, $37, $01, $35
-	.byte $01, $33, $01, $35, $00, $33, $01, $32, $01, $2E, $02, $35, $00, $82, $01, $37, $3A, $3C, $3F, $83
-	.byte $3C, $04, $7E, $01, $43, $00, $82, $01, $41, $3F, $3C, $41, $3F, $83, $3E, $00, $3A, $00, $3C, $02
+	.byte $E7, $93, $02, $FC, $35, $00, $82, $01, $37, $3A, $3C, $35, $83, $37, $04, $7E, $02, $94, $0A, $35
+	.byte $00, $94, $02, $37, $01, $35, $01, $33, $01, $35, $00, $33, $01, $32, $01, $2E, $02, $35, $00, $82
+	.byte $01, $37, $3A, $3C, $3F, $83, $3C, $04, $7E, $00, $94, $05, $41, $00, $94, $02, $43, $00, $82, $01
+	.byte $41, $3F, $3C, $41, $3F, $83, $3E, $00, $3A, $00, $3C, $02
 
 ; Bank 0
 ft_s1_frames:
 	.word ft_s1f0
 ft_s1f0:
-	.word ft_s0p0c0, ft_s0p0c0, ft_s1p0c2, ft_s0p0c0, ft_s0p0c0
+	.word ft_s1p0c0, ft_s1p0c1, ft_s1p0c2, ft_s0p0c0, ft_s1p0c4
+; Bank 0
+ft_s1p0c0:
+	.byte $00, $00, $82, $01, $E6, $27, $2E, $3A, $27, $2E, $3A, $27, $2E, $3A, $27, $2E, $3A, $27, $2E, $3A
+	.byte $27, $2E, $3A, $27, $2E, $3A, $27, $2E, $83, $3A, $10
+
+; Bank 0
+ft_s1p0c1:
+	.byte $82, $01, $E6, $1B, $2C, $33, $1B, $2C, $33, $1B, $2C, $33, $1B, $2C, $33, $1B, $2C, $33, $1B, $2C
+	.byte $33, $1B, $2C, $33, $1B, $2C, $83, $33, $11
+
 ; Bank 0
 ft_s1p0c2:
-	.byte $E5, $1E, $03, $1E, $3B
+	.byte $00, $2E, $87, $01, $00, $10
+
+; Bank 0
+ft_s1p0c4:
+	.byte $04, $3F
 
 
 ; DPCM samples (located at DPCM segment)
@@ -377,6 +400,16 @@ ft_sample_2: ; HUGESNAR.dmc
 	.byte $EC, $60, $C6, $E0, $98, $01, $8C, $C3, $30, $98, $63, $04, $C0, $CC, $8C, $00, $18, $8E, $11, $20
 	.byte $07, $0C, $19, $B1, $91, $01, $26, $33, $0E, $18, $34, $31, $64, $CC, $CC, $08, $26, $C6, $00, $C6
 	.byte $0C, $C2, $40, $87, $86, $21, $64, $54, $00
+
+	.align 64
+
+ft_sample_3: ; saw-D2
+	.byte $B6, $D6, $5A, $6B, $6B, $AD, $B5, $D6, $D6, $5A, $6B, $AD, $AD, $B5, $D6, $5A, $5B, $6B, $AD, $B5
+	.byte $B6, $D6, $5A, $6B, $6D, $AD, $B5, $D6, $02, $00, $00, $A0, $AD, $B5, $D6, $5A, $5B, $6B, $AD, $B5
+	.byte $B6, $D6, $5A, $6B, $6D, $AD, $B5, $D6, $DA, $5A, $6B, $AD, $B5, $B5, $D6, $5A, $6B, $6B, $AD, $B5
+	.byte $B6, $D6, $5A, $6B, $6D, $AD, $B5, $D6, $DA, $5A, $6B, $AD, $B5, $B5, $D6, $5A, $6B, $6B, $AD, $B5
+	.byte $D6, $D6, $5A, $6B, $2D, $00, $00, $00, $DA, $5A, $6B, $AD, $B5, $B5, $D6, $5A, $6B, $6B, $AD, $B5
+	.byte $D6, $D6, $5A, $6B, $AD, $AD, $B5, $D6, $5A, $5B, $6B, $AD, $B5
 
 	.align 64
 

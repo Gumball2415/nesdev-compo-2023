@@ -25,26 +25,38 @@ universal_pal:
 	.endrepeat
 
 img_0_pal:
-	.byte $30,$12,$0F,$22
-	.byte $30,$01,$21,$31
-	.byte $30,$06,$16,$26
-	.byte $30,$09,$19,$29
-	.byte $30,$00,$0F,$10
-	.byte $30,$01,$21,$31
-	.byte $30,$06,$16,$26
-	.byte $30,$09,$19,$29
+	.repeat 8
+		.byte $0F,$0A,$19,$29
+	.endrepeat
 img_0_attr:
 	.res 64, 0
 img_0_oam:
 	.res $FF, $FF ; sprite 0 is skipped
-img_0_bank0:
-	.incbin "obj/bank0.toku"
-img_0_bank1:
-	.incbin "obj/bank1.toku"
-img_0_bank2:
-	.incbin "obj/bank2.toku"
-img_0_bank3:
-	.incbin "obj/bank3.toku"
+img_0_bank_0:
+	.incbin "obj/img_0/bank_0.toku"
+img_0_bank_1:
+	.incbin "obj/img_0/bank_1.toku"
+img_0_bank_2:
+	.incbin "obj/img_0/bank_2.toku"
+img_0_bank_s:
+	.incbin "obj/img_0/bank_s.toku"
+
+img_1_pal:
+	.repeat 8
+		.byte $0f,$04,$15,$26
+	.endrepeat
+img_1_attr:
+	.res 64, 0
+img_1_oam:
+	.res $FF, $FF ; sprite 0 is skipped
+img_1_bank_0:
+	.incbin "obj/img_1/bank_0.toku"
+img_1_bank_1:
+	.incbin "obj/img_1/bank_1.toku"
+img_1_bank_2:
+	.incbin "obj/img_1/bank_2.toku"
+img_1_bank_s:
+	.incbin "obj/img_1/bank_s.toku"
 
 
 .segment "PRGFIXED_C000"
@@ -52,10 +64,26 @@ img_0:
 	.addr img_0_pal
 	.addr img_0_attr
     .addr img_0_oam
-    .addr img_0_bank0
-    .addr img_0_bank1
-    .addr img_0_bank2
-    .addr img_0_bank3
+    .addr img_0_bank_0
+    .addr img_0_bank_1
+    .addr img_0_bank_2
+    .addr img_0_bank_s
+	.byte 0
+	.byte 0
+	.byte 0
+	.byte 0
+	.byte 0
+	.byte 0
+	.byte 0
+
+img_1:
+	.addr img_1_pal
+	.addr img_1_attr
+    .addr img_1_oam
+    .addr img_1_bank_0
+    .addr img_1_bank_1
+    .addr img_1_bank_2
+    .addr img_1_bank_s
 	.byte 0
 	.byte 0
 	.byte 0
@@ -66,6 +94,8 @@ img_0:
 
 img_table:
 	.addr img_0
+	.addr img_1
+img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
@@ -156,46 +186,6 @@ loop2:
 .endproc
 
 ;;
-; sets the nametable for gallery view
-; @param A base address of nametable ($20, $24, $28, or $2C)
-.proc set_gallery_nametable
-	pha
-	; check if we've already initialized the nametable
-	lda sys_mode
-	and #sys_MODE_GALLERYINIT
-	bne @skip_nametable_init
-
-	pla
-	pha
-	tax
-	lda #0
-	tay
-	jsr ppu_clear_nt
-	pla
-
-	bit PPUSTATUS
-	sta PPUADDR
-	lda #$60
-	sta PPUADDR
-	ldx #3
-	ldy #0
-
-@loop:
-    sty PPUDATA
-	iny
-	bne @loop
-
-	dex
-	bne @loop
-
-	rts
-
-@skip_nametable_init:
-	pla
-	rts
-.endproc
-
-;;
 ; clears current CHR RAM bank
 .proc clear_chr
 	lda #0
@@ -261,18 +251,31 @@ loop2:
 	pha
 	lda s_A53_CHR_BANK
 	pha
-	;set up sprite zero in OAM shadow buffer
+
+	;set up sprite zero in OAM shadow buffers
+	lda #$06
+	sta shadow_oam_ptr+1
 	ldy #<loadscreen_sprite0_data_size
 	dey
-	:
-		lda loadscreen_sprite0_data, y
-		sta SHADOW_OAM, y
-		inc oam_size
-		dey
-		bpl :-
-	
+@copysprite0inoam2:
+	lda loadscreen_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	inc oam_size
+	dey
+	bpl @copysprite0inoam2
+
+	lda #$07
+	sta shadow_oam_ptr+1
+	ldy #<gallery_sprite0_data_size
+	dey
+@copysprite0inoam1:
+	lda gallery_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	dey
+	bpl @copysprite0inoam1
+
+	; switch to universal palette
 	a53_set_prg_safe #0
-	a53_set_chr_safe #3
 	lda #<universal_pal
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
@@ -281,10 +284,15 @@ loop2:
 	ora #sys_MODE_NMIPAL
 	sta sys_mode
 
+	; setup loading screen NMI
 	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 
+	; switch to universal CHR bank
+	a53_set_chr_safe #3
+
 	lda nmis
+
 @wait_nmi:
 	cmp nmis
 	beq @wait_nmi
@@ -313,45 +321,45 @@ loop2:
 	lda #0
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK0_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK0_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK0_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_0_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_0_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_0_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
 
 	inc s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK1_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK1_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK1_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_1_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_1_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_1_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
 
 	inc s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK2_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK2_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK2_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_2_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_2_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_2_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK3_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK3_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK3_PTR+1
+	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
+	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
+	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
@@ -394,7 +402,7 @@ loop2:
 
 @loop:
 	lda (temp1_16),y
-	sta SHADOW_OAM,y
+	sta (shadow_oam_ptr),y
 	iny
 	bne @loop
 
@@ -426,6 +434,58 @@ loop2:
 	cpy #64
 	bne @loop
 
+	rts
+.endproc
+
+;;
+; sets the nametable for gallery view
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc set_gallery_nametable
+	pha
+	; check if we've already initialized the nametable
+	lda sys_mode
+	and #sys_MODE_GALLERYINIT
+	bne @skip_nametable_init
+
+	pla
+	pha
+	tax
+	lda #0
+	tay
+	jsr ppu_clear_nt
+	pla
+
+	bit PPUSTATUS
+	sta PPUADDR
+	lda #$60
+	sta PPUADDR
+	ldx #3
+	ldy #0
+
+@loop:
+    sty PPUDATA
+	iny
+	bne @loop
+
+	dex
+	bne @loop
+
+	lda #$FF
+	ldx #3
+	ldy #$30
+@loop2:
+	sta PPUDATA
+	dey
+	bne @loop2
+
+	ldy #$30
+	dex
+	bne @loop2
+
+	rts
+
+@skip_nametable_init:
+	pla
 	rts
 .endproc
 

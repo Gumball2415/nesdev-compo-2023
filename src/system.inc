@@ -24,18 +24,18 @@ sys_MODE_NMIOCCURRED = %10000000
 	img_PAL_PTR .addr
 	img_ATTR_PTR .addr
 	img_OAM_PTR .addr
-	img_BANK0_PTR .addr
-	img_BANK1_PTR .addr
-	img_BANK2_PTR .addr
-	img_BANK3_PTR .addr
+	img_BANK_0_PTR .addr
+	img_BANK_1_PTR .addr
+	img_BANK_2_PTR .addr
+	img_BANK_S_PTR .addr
 
 	img_PAL_LOC .byte
 	img_ATTR_LOC .byte
 	img_OAM_LOC .byte
-	img_BANK0_LOC .byte
-	img_BANK1_LOC .byte
-	img_BANK2_LOC .byte
-	img_BANK3_LOC .byte
+	img_BANK_0_LOC .byte
+	img_BANK_1_LOC .byte
+	img_BANK_2_LOC .byte
+	img_BANK_S_LOC .byte
 
 	img_DATA_PTR_SIZE .byte
 .endstruct

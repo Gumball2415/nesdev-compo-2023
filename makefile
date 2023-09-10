@@ -19,6 +19,9 @@ version = 0.0.0
 # (the \ character) at the end of the line and continue on the next.
 objlist = header music main action53 pads graphics tokumaru/decompress
 
+# image files
+imglist = img_0 img_1
+
 
 AS65 = ca65 $(CFLAGS65)
 LD65 = ld65 $(LDFLAGS65)
@@ -29,7 +32,8 @@ objdir = obj
 srcdir = src
 imgdir = gfx
 outdir = output
-make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru
+musdir = music/no_guarantees
+make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru  $(imgdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -89,9 +93,11 @@ build_dirs:
 
 # Rules for PRG ROM
 
-objlistntsc = $(foreach o,$(objlist),$(objdir)/$(o).o)
+objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
+imglistmac = $(foreach o,$(imglist),$(objdir)/$(o)/bank_0.toku $(objdir)/$(o)/bank_1.toku $(objdir)/$(o)/bank_2.toku $(objdir)/$(o)/bank_s.toku)
+imgdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o)/)
 
-$(outdir)/map.txt $(outdir)/$(title)-$(version).nes: $(srcdir)/$(MAPPERCFG) $(objlistntsc)
+$(outdir)/map.txt $(outdir)/$(title)-$(version).nes: $(srcdir)/$(MAPPERCFG) $(objlistmac)
 	$(LD65) --dbgfile $(outdir)/$(title)-$(version).dbg -o $(outdir)/$(title)-$(version).nes -m $(outdir)/map.txt -C $^
 
 $(objdir)/%.o: $(srcdir)/%.s $(srcdir)/nes.inc $(srcdir)/global.inc
@@ -101,30 +107,29 @@ $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
 # Files that depend on .incbin'd files
+$(objdir)/music.o: $(objdir)/music.asm 
+
 $(objdir)/graphics.o: \
-	$(objdir)/bank0.toku \
-	$(objdir)/bank1.toku \
-	$(objdir)/bank2.toku \
-	$(objdir)/bank3.toku \
+	$(imglistmac) \
 	$(objdir)/universal.toku \
 
-# This is an example of how to call a lookup table generator at
-# build time.  mktables.py itself is not included because the demo
-# has no music engine, but it's available online at
-# http://wiki.nesdev.com/w/index.php/APU_period_table
-$(objdir)/ntscPeriods.s: tools/mktables.py
-	$(PY) $< period $@
+
+# Rules for Dn-FT exports
+
+$(objdir)/music.asm: $(musdir)/music.asm 
+	cp $< $@
+
 
 # Rules for CHR data
 
 $(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
 	tools/tokumaru/tokumaru -e -16 $< $@
 
-# TODO: raw images go here
 $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
 
- $(objdir)/%.chr: $(imgdir)/%.bmp
+# convert indexed bitmap into 4k CHR
+ $(imgdir)/%.chr: $(imgdir)/%.bmp
 	tools/pilbmp2nes.py $< $@
 
 tools/tokumaru/tokumaru:

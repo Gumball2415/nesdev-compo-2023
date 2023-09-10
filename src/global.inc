@@ -20,7 +20,7 @@
 ; main.s
 .global main, nmi_handler, irq_handler, reset_handler, load_ptr_temp1_16
 .global update_graphics
-.globalzp cur_keys, new_keys, oam_used
+.globalzp cur_keys, new_keys, oam_used, shadow_oam_ptr
 
 ; music.s
 .global start_music, run_music
@@ -34,6 +34,7 @@
 .global set_gallery_nametable, set_gallery_loading_screen, transfer_img_pal
 .global gallery_sprite0_data, gallery_sprite0_data_size, update_progress_bar
 .global sync_ppuaddr_ptr, inc_ppuaddr_ptr, inc_ppuaddr_ptr_chr, universal_pal
+.global img_table_size
 .globalzp shadow_palette
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK

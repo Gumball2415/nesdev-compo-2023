@@ -11,8 +11,6 @@
 .ifndef NES_INC
 .define NES_INC 1
 
-SHADOW_OAM = $0200
-
 PPUCTRL = $2000
 NT_2000 = $00
 NT_2400 = $01
