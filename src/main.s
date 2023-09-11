@@ -133,7 +133,7 @@ program_table_hi:
 	sta shadow_oam_ptr+1
 	jsr update_graphics
 	; overwrite PPUCTRL
-	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
+	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 	ldy #0
 	a53_set_chr #3
@@ -264,7 +264,7 @@ program_table_hi:
 	sta sys_mode
 
 	; enable NMI immediately
-	lda #NT_2000|OBJ_1000|BG_0000|VBLANK_NMI
+	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 

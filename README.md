@@ -7,6 +7,7 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 Main collaborators:
 - Persune (Gumball2415)
 - Kagamiin
+- Kasumi (consulting)
 
 "SHVTERA" is an amalgamation of "shutter", i.e. the one in a camera. this is dedicated to my friends who make amazing art, and i wanted to capture them with a camera of my own, i.e. this entry.
 

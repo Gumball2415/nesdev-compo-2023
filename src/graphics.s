@@ -99,10 +99,10 @@ img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
 gallery_sprite0_data:
-	.byte $56, $FF, $00, $F8
+	.byte $4E, $FF, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
 loadscreen_sprite0_data:
-	.byte $1E, $FF, $00, $DF
+	.byte $16, $FF, $00, $DF
 	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 
 ; copies the palette from shadow regs to PPU
@@ -285,7 +285,7 @@ loop2:
 	sta sys_mode
 
 	; setup loading screen NMI
-	lda #NT_2400|OBJ_1000|BG_1000|VBLANK_NMI
+	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 
 	; switch to universal CHR bank
