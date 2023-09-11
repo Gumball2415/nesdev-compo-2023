@@ -42,9 +42,14 @@ img_0_bank_s:
 	.incbin "obj/img_0/bank_s.toku"
 
 img_1_pal:
-	.repeat 8
-		.byte $0F,$03,$15,$34
-	.endrepeat
+		.byte $0F,$16,$26,$37
+		.byte $0F,$0F,$0F,$0F
+		.byte $0F,$0F,$0F,$0F
+		.byte $0F,$0F,$0F,$0F
+		.byte $0F,$37,$35,$30
+		.byte $0F,$0F,$0F,$0F
+		.byte $0F,$0F,$0F,$0F
+		.byte $0F,$0F,$0F,$0F
 img_1_attr:
 	.res 64, 0
 img_1_oam:

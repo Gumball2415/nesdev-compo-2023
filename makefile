@@ -34,7 +34,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music/no_guarantees
-make_dirs = $(objdir) $(objdir)/tokumaru $(objdir)/bhop $(outdir) $(imgdirlistmac)
+make_dirs = $(objdir) $(objdir)/tokumaru $(objdir)/bhop $(outdir) $(imgoutdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -93,8 +93,9 @@ clean:
 # Rules for PRG ROM
 
 objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
-imglistmac = $(foreach o,$(imglist),$(objdir)/$(o)/bank_0.toku $(objdir)/$(o)/bank_1.toku $(objdir)/$(o)/bank_2.toku $(objdir)/$(o)/bank_s.toku)
-imgdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
+# input images
+imgoutdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
+
 
 $(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
 	$(LD65) --dbgfile $(outdir)/$(filetitle).dbg -o $(outdir)/$(filetitle).nes -m $(outdir)/map.txt -C $(srcdir)/$(MAPPERCFG) $(objlistmac)
@@ -111,7 +112,10 @@ $(objdir)/%.o: $(objdir)/%.s
 $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
-	$(imglistmac) \
+	$(objdir)/$(imglist)/bank_0.toku \
+	$(objdir)/$(imglist)/bank_1.toku \
+	$(objdir)/$(imglist)/bank_2.toku \
+	$(objdir)/$(imglist)/bank_s.toku \
 	$(objdir)/universal.toku \
 
 
@@ -126,16 +130,17 @@ $(objdir)/music.asm: $(musdir)/music.asm
 $(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
 	tools/tokumaru/tokumaru -e -16 $< $@
 
+# some preprocessed CHR can be directly copied
 $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
 
-# convert indexed bitmap into 4k CHR
- $(imgdir)/%.chr: $(imgdir)/%.bmp
-	tools/pilbmp2nes.py $< $@
+# convert seperate indexed bitmap into 4k CHR
+$(objdir)/%.chr: $(imgdir)/%.bmp
+	$(PY) tools/pilbmp2nes.py $< $@
 
-# $(objdir)/%16.chr: $(imgdir)/%.png
-	# $(PY) tools/pilbmp2nes.py -H 16 $< $@
-
+# format input .bmp to portions
+# $(objdir)/$() : $(input bitmap)
+	# tools/preprocess_bmp.py $< $@
 
 # Rules for directories
 

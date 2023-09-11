@@ -279,6 +279,8 @@ program_table_hi:
 	; start music with song id #0
 	lda #0
 	jsr start_music
+	lda #1
+	sta img_index
 	
 	jmp mainloop
 .endproc
@@ -357,6 +359,7 @@ wait_for_nmi:
 	rts
 
 
+IMG_INDEX_MAX = <(img_table_size/2)-1
 
 ; helper functions
 gallery_left:
@@ -368,7 +371,7 @@ gallery_left:
 	jmp @left_end
 
 @wrap_up:
-	lda #<(img_table_size/2)-1
+	lda #IMG_INDEX_MAX
 	sta img_index
 @left_end:
 	rts
@@ -377,7 +380,7 @@ gallery_left:
 gallery_right:
 	; change the image index
 	lda img_index
-	cmp #<(img_table_size/2)-1
+	cmp #IMG_INDEX_MAX
 	beq @wrap_down
 
 	inc img_index
