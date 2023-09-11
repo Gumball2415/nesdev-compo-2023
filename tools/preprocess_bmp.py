@@ -16,14 +16,12 @@
 #   OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-# convert input 256x192 indexed bitmap tileset into 3 256x64 tilesets
-
 import sys
 import os
 import argparse
 from PIL import Image
 
-parser = argparse.ArgumentParser(description="convert input 256x240 indexed bitmap tileset into 3 256x64 indexed bitmaps.")
+parser = argparse.ArgumentParser(description="convert input 256x192 indexed bitmap tileset into 3 256x64 tilesets.")
 parser.add_argument("input_image", type=str, help="input image")
 parser.add_argument("output_dir", type=str, help="output_directory")
 
