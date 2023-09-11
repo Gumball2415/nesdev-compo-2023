@@ -43,7 +43,7 @@ img_0_bank_s:
 
 img_1_pal:
 	.repeat 8
-		.byte $0f,$04,$15,$26
+		.byte $0F,$03,$15,$34
 	.endrepeat
 img_1_attr:
 	.res 64, 0

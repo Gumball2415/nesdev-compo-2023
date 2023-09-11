@@ -11,13 +11,14 @@
 #
 
 # These are used in the title of the NES program and the zip file.
+filetitle = $(title)-$(version)
 title = nesdev-compo-2023
 version = 0.0.0
 
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = header music main action53 pads graphics tokumaru/decompress
+objlist = header action53 main pads graphics tokumaru/decompress music bhop
 
 # image files
 imglist = img_0 img_1
@@ -33,7 +34,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music/no_guarantees
-make_dirs = $(objdir) $(outdir) $(objdir)/tokumaru $(imgdirlistmac)
+make_dirs = $(objdir) $(objdir)/tokumaru $(objdir)/bhop $(outdir) $(imgdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -59,9 +60,9 @@ endif
 
 .PHONY: build_dirs all dist zip clean rebuild
 
-all: build_dirs $(outdir)/$(title)-$(version).nes
+all: $(outdir)/$(filetitle).nes
 
-rebuild: clean build_dirs $(outdir)/$(title)-$(version).nes
+rebuild: clean $(outdir)/$(filetitle).nes
 
 # Rule to create or update the distribution zipfile by adding all
 # files listed in zip.in.  Actually the zipfile depends on every
@@ -71,14 +72,14 @@ rebuild: clean build_dirs $(outdir)/$(title)-$(version).nes
 # docs changes, README also changes, and when tools changes, the
 # makefile changes.
 dist: zip
-zip: $(title)-$(version).zip
-$(title)-$(version).zip: zip.in $(outdir) README.md CHANGES.txt $(objdir)/index.txt
+zip: $(filetitle).zip
+$(filetitle).zip: zip.in $(outdir) README.md CHANGES.txt $(objdir)/index.txt
 	zip -9 -u $@ -@ < $<
 
 # Build zip.in from the list of files in the Git tree
 zip.in:
 	git ls-files | grep -e "^[^.]" > $@
-	echo $(title)-$(version).nes >> $@
+	echo $(filetitle).nes >> $@
 	echo zip.in >> $@
 
 $(objdir)/index.txt: makefile
@@ -86,29 +87,27 @@ $(objdir)/index.txt: makefile
 
 # make sure that files actually exist before deleting them
 clean:
-	if [ "$(wildcard $(objdir)/*)" ]; then rm -v -d -r $(objdir)/*; fi
-	if [ "$(wildcard $(outdir)/*)" ]; then rm -v -d -r $(outdir)/*; fi
-
-build_dirs:
-	@mkdir -p $(make_dirs) 2>/dev/null
-
+	if [ "$(wildcard $(objdir)/*)" ]; then rm -rf $(objdir)/*; fi
+	if [ "$(wildcard $(outdir)/*)" ]; then rm -rf $(outdir)/*; fi
 
 # Rules for PRG ROM
 
 objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
 imglistmac = $(foreach o,$(imglist),$(objdir)/$(o)/bank_0.toku $(objdir)/$(o)/bank_1.toku $(objdir)/$(o)/bank_2.toku $(objdir)/$(o)/bank_s.toku)
-imgdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o)/)
+imgdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
 
-$(outdir)/map.txt $(outdir)/$(title)-$(version).nes: $(srcdir)/$(MAPPERCFG) $(objlistmac)
-	$(LD65) --dbgfile $(outdir)/$(title)-$(version).dbg -o $(outdir)/$(title)-$(version).nes -m $(outdir)/map.txt -C $^
+$(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
+	$(LD65) --dbgfile $(outdir)/$(filetitle).dbg -o $(outdir)/$(filetitle).nes -m $(outdir)/map.txt -C $(srcdir)/$(MAPPERCFG) $(objlistmac)
 
-$(objdir)/%.o: $(srcdir)/%.s $(srcdir)/nes.inc $(srcdir)/global.inc
+$(objdir)/%.o: $(srcdir)/%.s
 	$(AS65) $< -o $@
 
 $(objdir)/%.o: $(objdir)/%.s
 	$(AS65) $< -o $@
 
+
 # Files that depend on .incbin'd files
+
 $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
@@ -134,8 +133,17 @@ $(objdir)/%.chr: $(imgdir)/%.chr
  $(imgdir)/%.chr: $(imgdir)/%.bmp
 	tools/pilbmp2nes.py $< $@
 
-tools/tokumaru/tokumaru:
-	cd tools/tokumaru && $(MAKE) tokumaru
-
 # $(objdir)/%16.chr: $(imgdir)/%.png
 	# $(PY) tools/pilbmp2nes.py -H 16 $< $@
+
+
+# Rules for directories
+
+ $(make_dirs):
+	@mkdir -p -v $@ 2>/dev/null
+
+
+# Rules for external tools
+
+tools/tokumaru/tokumaru:
+	cd tools/tokumaru && $(MAKE) tokumaru

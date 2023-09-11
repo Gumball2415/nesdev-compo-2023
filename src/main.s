@@ -275,11 +275,9 @@ program_table_hi:
 	; set system state to title screen
 	lda #STATE_ID::sys_GALLERYS
 	sta sys_state
-	
-	lda #0
-	sta img_progress
-	
+
 	; start music with song id #0
+	lda #0
 	jsr start_music
 	
 	jmp mainloop
