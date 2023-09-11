@@ -47,6 +47,6 @@ with Image.open(args.input_image) as image:
     # may allow some artists to do gradient bg where the top is one color,
     # and the bottom is another color
 
-    image.crop((0, 0, 255, 63)).save(args.output_dir+"/bank_0.bmp", "BMP")
-    image.crop((0, 64, 255, 127)).save(args.output_dir+"/bank_1.bmp", "BMP")
-    image.crop((0, 128, 255, 191)).save(args.output_dir+"/bank_2.bmp", "BMP")
+    image.crop((0, 0, 256, 64)).save(args.output_dir+"/bank_0.bmp", "BMP")
+    image.crop((0, 64, 256, 128)).save(args.output_dir+"/bank_1.bmp", "BMP")
+    image.crop((0, 128, 256, 192)).save(args.output_dir+"/bank_2.bmp", "BMP")

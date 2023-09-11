@@ -93,8 +93,16 @@ clean:
 # Rules for PRG ROM
 
 objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
-# input images
 imgoutdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
+imgindirlistmac = $(foreach o,$(imglist),$(imgdir)/$(o))
+
+imgbmprawlistmac = $(foreach o,$(imglist),$(o)/$(o).bmp)
+imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
+imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).toku)
+imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
+imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
+imginbmplistmac = $(foreach o,$(imgbmprawlistmac),$(imgdir)/$(o))
+imgoutbmplistmac = $(foreach o,$(imgbmprawlistmac),$(objdir)/$(o))
 
 
 $(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
@@ -112,10 +120,7 @@ $(objdir)/%.o: $(objdir)/%.s
 $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
-	$(objdir)/$(imglist)/bank_0.toku \
-	$(objdir)/$(imglist)/bank_1.toku \
-	$(objdir)/$(imglist)/bank_2.toku \
-	$(objdir)/$(imglist)/bank_s.toku \
+	$(imgbankscmplistmac) \
 	$(objdir)/universal.toku \
 
 
@@ -135,12 +140,21 @@ $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
 
 # convert seperate indexed bitmap into 4k CHR
-$(objdir)/%.chr: $(imgdir)/%.bmp
+$(objdir)/%.chr: $(objdir)/%.bmp
 	$(PY) tools/pilbmp2nes.py $< $@
 
-# format input .bmp to portions
-# $(objdir)/$() : $(input bitmap)
-	# tools/preprocess_bmp.py $< $@
+$(objdir)/%.bmp: $(imgdir)/%.bmp
+	cp $< $@
+
+# format input .bmp
+$(imgbankscmplistmac): $(imgbankschrlistmac)
+$(imgbankschrlistmac): $(imgbanksbmplistmac)
+$(imgbanksbmplistmac): $(imgoutbmplistmac)
+$(imgoutbmplistmac): $(imginbmplistmac)
+	# holy crap.
+	cp $(imgdir)/$(notdir $(basename $@))/$(notdir $@) $@
+	$(PY) tools/preprocess_bmp.py $@ $(dir $@)
+
 
 # Rules for directories
 

@@ -46,14 +46,46 @@ img_1_pal:
 		.byte $0F,$0F,$0F,$0F
 		.byte $0F,$0F,$0F,$0F
 		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$37,$35,$30
+		.byte $0F,$35,$37,$30
 		.byte $0F,$0F,$0F,$0F
 		.byte $0F,$0F,$0F,$0F
 		.byte $0F,$0F,$0F,$0F
 img_1_attr:
 	.res 64, 0
 img_1_oam:
-	.res $FF, $FF ; sprite 0 is skipped
+	.byte $FF,$FF,$FF,$FF,$38,$01,$00,$5C
+	.byte $26,$03,$00,$6A,$39,$05,$00,$68
+	.byte $39,$07,$00,$70,$39,$09,$00,$78
+	.byte $49,$0B,$00,$68,$49,$0D,$00,$70
+	.byte $49,$0F,$00,$78,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
 img_1_bank_0:
 	.incbin "obj/img_1/bank_0.toku"
 img_1_bank_1:
