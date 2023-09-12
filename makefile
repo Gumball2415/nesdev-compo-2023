@@ -94,15 +94,18 @@ clean:
 
 objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
 imgoutdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
-imgindirlistmac = $(foreach o,$(imglist),$(imgdir)/$(o))
 
 imgbmprawlistmac = $(foreach o,$(imglist),$(o)/$(o).bmp)
+imgmiscrawlistmac = $(foreach o,$(imglist),$(o)/pal $(o)/attr $(o)/oam)
+imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
+imgmiscobjlistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).o)
+
 imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
 imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).toku)
 imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
 imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
-imginbmplistmac = $(foreach o,$(imgbmprawlistmac),$(imgdir)/$(o))
 imgoutbmplistmac = $(foreach o,$(imgbmprawlistmac),$(objdir)/$(o))
+imginbmplistmac = $(foreach o,$(imgbmprawlistmac),$(imgdir)/$(o))
 
 
 $(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
@@ -121,6 +124,7 @@ $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
 	$(imgbankscmplistmac) \
+	$(imgmiscsrclistmac) \
 	$(objdir)/universal.toku \
 
 
@@ -146,15 +150,22 @@ $(objdir)/%.chr: $(objdir)/%.bmp
 $(objdir)/%.bmp: $(imgdir)/%.bmp
 	cp $< $@
 
-# format input .bmp
+# prepare input bitmaps
+# ensure the bmp2toku pipeline is preserved
 $(imgbankscmplistmac): $(imgbankschrlistmac)
 $(imgbankschrlistmac): $(imgbanksbmplistmac)
 $(imgbanksbmplistmac): $(imgoutbmplistmac)
 $(imgoutbmplistmac): $(imginbmplistmac)
-	# holy crap.
-	cp $(imgdir)/$(notdir $(basename $@))/$(notdir $@) $@
-	$(PY) tools/preprocess_bmp.py $@ $(dir $@)
+$(imginbmplistmac): $(imgbmprawlistmac)
+$(imgbmprawlistmac):
+	cp $(imgdir)/$@ $(objdir)/$@
+	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
 
+# prepare auxilliary data
+$(imgmiscobjlistmac): $(imgmiscsrclistmac)
+$(imgmiscsrclistmac): $(imgmiscrawlistmac)
+$(imgmiscrawlistmac):
+	cp $(imgdir)/$@.s $(objdir)/$@.s
 
 # Rules for directories
 

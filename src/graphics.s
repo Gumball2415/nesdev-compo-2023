@@ -25,15 +25,13 @@ universal_pal:
 	.endrepeat
 
 img_0_pal:
-	.repeat 8
-		.byte $0F,$0A,$19,$29
-	.endrepeat
+	.include "../obj/img_0/pal.s"
 img_0_attr:
-	.res 64, 0
+	.include "../obj/img_0/attr.s"
 img_0_oam:
-	.res $FF, $FF ; sprite 0 is skipped
+	.include "../obj/img_0/oam.s"
 img_0_bank_0:
-	.incbin "obj/img_0/bank_0.toku"
+	.incbin "obj/img_0/bank_0.toku" 
 img_0_bank_1:
 	.incbin "obj/img_0/bank_1.toku"
 img_0_bank_2:
@@ -42,49 +40,11 @@ img_0_bank_s:
 	.incbin "obj/img_0/bank_s.toku"
 
 img_1_pal:
-		.byte $0F,$16,$26,$37
-		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$35,$37,$30
-		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$0F,$0F,$0F
-		.byte $0F,$0F,$0F,$0F
+	.include "../obj/img_1/pal.s"
 img_1_attr:
-	.res 64, 0
+	.include "../obj/img_1/attr.s"
 img_1_oam:
-	.byte $FF,$FF,$FF,$FF,$38,$01,$00,$5C
-	.byte $26,$03,$00,$6A,$39,$05,$00,$68
-	.byte $39,$07,$00,$70,$39,$09,$00,$78
-	.byte $49,$0B,$00,$68,$49,$0D,$00,$70
-	.byte $49,$0F,$00,$78,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+	.include "../obj/img_1/oam.s"
 
 img_1_bank_0:
 	.incbin "obj/img_1/bank_0.toku"
