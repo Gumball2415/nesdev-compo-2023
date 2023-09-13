@@ -2,18 +2,12 @@
 .include "nes.inc"
 .include "checked_branches.inc"
 
-.segment "ZEROPAGE"
-temp1_8:        .res 1
-temp2_8:        .res 1
-temp1_16:       .res 2
-temp2_16:       .res 2
-temp3_16:       .res 2
-sys_state:      .res 1
-sys_mode:       .res 1
+; waits for end of vblank before enabling rendering
+; scanline 0 is glitched
+SKIP_DOT_DISABLE = 1
 
+.segment "ZEROPAGE"
 nmis:           .res 1
-oam_used:       .res 1  ; starts at 0
-shadow_oam_ptr: .res 2
 cur_keys:       .res 2
 new_keys:       .res 2
 
@@ -22,23 +16,24 @@ new_keys:       .res 2
 ; these routines are sensitive to page crosses
 .proc gallery_display_kernel_ntsc
 	; here, we have a budget of 10528 cycles before sprite 0 hits
-	; delay for a bit to ensure we're into the visible screen area at this point
-	; TODO: remove this if we don't need this delay anymore, if we have stuff to do before the sprite 0 check?
-	ldy #$C8
 
-	:
-		nop
-		iny
-		bne :-
+	; delay until it's ok to poll for sprite 0
+@wait_sprite0_reset:
+	bit PPUSTATUS
+	bvs @wait_sprite0_reset
+
+@wait_vblank_end:
+	bit PPUSTATUS
+	bvs @wait_vblank_end
 
 	inc s_A53_MUTEX
 	; splitting the a53_write macro in half for timing reasons 1/2
 	lda #A53_REG_CHR_BANK
 	sta z:s_A53_REG_SELECT
 
-@check_sprite0:
+@wait_sprite0_hit:
 	bit PPUSTATUS
-	bvc @check_sprite0  ; spin on sprite 0 hit
+	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
 
 	; splitting the a53_write macro in half for timing reasons 2/2
 	sta A53_REG_SELECT
@@ -115,6 +110,7 @@ program_table_hi:
 	jsr update_graphics
 
 @skip_update_graphics:
+	jsr read_pads
 	jsr run_music
 
 	pla
@@ -131,26 +127,32 @@ program_table_hi:
 	; use shadow oam 2 for sprite 0 hit
 	lda #$06
 	sta shadow_oam_ptr+1
-	jsr update_graphics
-	; overwrite PPUCTRL
+	; overwrite PPUCTRL and s_A53_CHR_BANK
+	lda s_PPUCTRL
+	pha
+	lda s_A53_CHR_BANK
+	pha
+	lda #3
+	sta s_A53_CHR_BANK
 	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
-	sta PPUCTRL
-	ldy #0
-	a53_set_chr #3
+	sta s_PPUCTRL
+	jsr update_graphics
 
-@loopwait:
-	nop
-	dey
-	bne @loopwait
+@wait_sprite0_reset:
+	bit PPUSTATUS
+	bvs @wait_sprite0_reset
 
 @check_sprite0:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
-	; partial CHR load here
+	; prepare for partial CHR load
 	lda #0
 	sta PPUMASK
-	lda s_PPUCTRL
+	pla
+	sta s_A53_CHR_BANK
+	pla
+	sta s_PPUCTRL
 	sta PPUCTRL
 	a53_set_chr s_A53_CHR_BANK
 	lda #$07
@@ -228,19 +230,21 @@ program_table_hi:
 @vblankwait2:
 	bit PPUSTATUS
 	bpl @vblankwait2
-
-	; clear all CHR RAM?
-	; jsr clear_all_chr
 	
 	; load universal tileset and palette
-
 	lda #<universal_pal
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
 	
-	; transfer palettes so that we don't linger on a dead screen
+	; as we are in vblank, transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
+
+	; clear current nametable
+	lda #$00
+	ldx #$20
+	ldy #$00
+	jsr ppu_clear_nt
 
 	; set up universal bank
 	a53_set_chr #3
@@ -276,26 +280,19 @@ program_table_hi:
 	sta sys_state
 
 	; start music with song id #0
-	lda #0
-	jsr start_music
 	lda #1
 	sta img_index
+	jsr start_music
 	
 	jmp mainloop
 .endproc
 
 .proc mainloop
-	; read controllers
-	; clobbers the three 16-bit variables
-	jsr read_pads
-
 	; run the machine
 	jsr run_state_machine
-	
-	lda nmis
-wait_for_nmi:
-	cmp nmis
-	beq wait_for_nmi
+
+	ldx #1
+	jsr wait_x_frames
 
 	jmp mainloop
 .endproc
@@ -425,6 +422,18 @@ gallery_right:
 	lda #0
 	sta PPUMASK				; disable rendering
 	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
+
+	; transfer palettes
+	lda sys_mode
+	and #sys_MODE_NMIPAL
+	beq @skip_pal
+
+	jsr transfer_palette
+	lda sys_mode
+	and #($FF - sys_MODE_NMIPAL)
+	sta sys_mode
+
+@skip_pal:
 	; transfer OAM
 	lda sys_mode
 	and #sys_MODE_NMIOAM
@@ -436,23 +445,30 @@ gallery_right:
 	sta OAM_DMA
 
 @skip_oam:
-	lda sys_mode
-	and #sys_MODE_NMIPAL
-	beq @skip_pal
-
-	; transfer palettes
-	jsr transfer_palette
-	lda sys_mode
-	and #($FF - sys_MODE_NMIPAL)
-	sta sys_mode
-
-@skip_pal:
-
-	; update scroll
-	jsr update_scrolling
 	
 	; switch to initial graphics bank
 	a53_set_chr s_A53_CHR_BANK
+
+	; update scroll
+	jsr update_scrolling
+
+.if ::SKIP_DOT_DISABLE
+@wait_vblank_end:
+	bit PPUSTATUS
+	bvs @wait_vblank_end
+
+	lda #$00
+	sta PPUMASK
+	sta PPUADDR
+	sta PPUADDR
+
+	ldy #$13
+	; at this point, the scroll seems to drift?
+
+@wait_dotskip_pixel:
+	dey
+	bne @wait_dotskip_pixel
+.endif
 	
 	lda s_PPUMASK
 	sta PPUMASK
@@ -463,8 +479,10 @@ gallery_right:
 	rts
 .endproc
 
+; helper functions
+
 ;;
-; helper function: set pointer using A and X
+; set pointer using A and X
 ; this happens quite a lot, so it may save bytes
 ; on just calling a subroutine instead
 ; @param A: low byte of address
@@ -473,5 +491,18 @@ gallery_right:
 .proc load_ptr_temp1_16
 	sta temp1_16+0
 	stx temp1_16+1
+	rts
+.endproc
+
+;;
+; wait X amount of frames
+; note: NMI must be enabled
+.proc wait_x_frames
+	lda nmis
+@wait_for_nmi:
+	cmp nmis
+	beq @wait_for_nmi
+	dex
+	bne @wait_for_nmi
 	rts
 .endproc

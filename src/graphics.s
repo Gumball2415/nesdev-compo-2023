@@ -2,18 +2,22 @@
 .include "nes.inc"
 
 .segment "ZEROPAGE"
-shadow_palette: .res 32
-; shadow regs for PPUCTRL and PPUMASK
+; shadow regs for PPUCTRL, PPUMASK, PPUSCROLL
+; and some extra variables for OAM and palettes
 ; 
 s_PPUCTRL:    .res 1
 s_PPUMASK:    .res 1
 ppu_scroll_x: .res 1
 ppu_scroll_y: .res 1
+oam_size:     .res 1
+shadow_oam_ptr: .res 2
+shadow_palette: .res 32 ; we store in zeropage for speed
+
+; misc. stuff
+pal_fade_dec: .res 1
 img_progress: .res 1
 img_index:    .res 1
 img_pointer:  .tag img_DATA_PTR
-oam_size:     .res 1
-
 
 
 .segment "PRG0_8000"
@@ -24,6 +28,7 @@ universal_pal:
 		.byte $0F,$03,$24,$30
 	.endrepeat
 
+; TODO: these labeled includes could be generated on compile time
 img_0_pal:
 	.include "../obj/img_0/pal.s"
 img_0_attr:
@@ -45,7 +50,6 @@ img_1_attr:
 	.include "../obj/img_1/attr.s"
 img_1_oam:
 	.include "../obj/img_1/oam.s"
-
 img_1_bank_0:
 	.incbin "obj/img_1/bank_0.toku"
 img_1_bank_1:
@@ -60,34 +64,34 @@ img_1_bank_s:
 img_0:
 	.addr img_0_pal
 	.addr img_0_attr
-    .addr img_0_oam
-    .addr img_0_bank_0
-    .addr img_0_bank_1
-    .addr img_0_bank_2
-    .addr img_0_bank_s
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
+	.addr img_0_oam
+	.addr img_0_bank_0
+	.addr img_0_bank_1
+	.addr img_0_bank_2
+	.addr img_0_bank_s
+	.addr <.bank(img_0_pal)
+	.addr <.bank(img_0_attr)
+	.addr <.bank(img_0_oam)
+	.addr <.bank(img_0_bank_0)
+	.addr <.bank(img_0_bank_1)
+	.addr <.bank(img_0_bank_2)
+	.addr <.bank(img_0_bank_s)
 
 img_1:
 	.addr img_1_pal
 	.addr img_1_attr
-    .addr img_1_oam
-    .addr img_1_bank_0
-    .addr img_1_bank_1
-    .addr img_1_bank_2
-    .addr img_1_bank_s
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
-	.byte 0
+	.addr img_1_oam
+	.addr img_1_bank_0
+	.addr img_1_bank_1
+	.addr img_1_bank_2
+	.addr img_1_bank_s
+	.addr <.bank(img_1_pal)
+	.addr <.bank(img_1_attr)
+	.addr <.bank(img_1_oam)
+	.addr <.bank(img_1_bank_0)
+	.addr <.bank(img_1_bank_1)
+	.addr <.bank(img_1_bank_2)
+	.addr <.bank(img_1_bank_s)
 
 img_table:
 	.addr img_0
@@ -288,12 +292,13 @@ loop2:
 	; switch to universal CHR bank
 	a53_set_chr_safe #3
 
-	lda nmis
+	; wait until vblank to transfer image palettes
+	; this allows the ppu palette transfer flag to expire
+	; and thus only display the universal palette
+	ldx #1
+	jsr wait_x_frames
 
-@wait_nmi:
-	cmp nmis
-	beq @wait_nmi
-
+	; transfer palettes, attributes, and OAM buffer
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_PAL_LOC
 	lda img_pointer+img_DATA_PTR::img_PAL_PTR
 	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
@@ -306,7 +311,6 @@ loop2:
 	jsr load_ptr_temp1_16
 	lda #$23
 	jsr transfer_img_attr
-	
 
 	a53_set_prg_safe img_pointer+img_DATA_PTR::img_OAM_LOC
 	lda img_pointer+img_DATA_PTR::img_OAM_PTR
@@ -378,11 +382,13 @@ loop2:
 ;;
 ; decompresses and transfers palette data to shadow palette
 ; @param temp1_16 pointer to compressed palette data
+; @param pal_fade_dec increment steps to the palette
 .proc transfer_img_pal
 	ldy #0
 
 @loop:
 	lda (temp1_16),y
+	ldx pal_fade_dec
 	sta shadow_palette,y
 	iny
 	cpy #32

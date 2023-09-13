@@ -35,7 +35,7 @@ EXTENDED_FORMAT=1
 ;   If you compressed with -e3, set to 3. If with -e2, set to 2.
 ;   +2 makes decompresser 1 byte smaller, but consumes 2 more bytes of RAM.
 
-FASTER=0
+FASTER=1
 ; ^ Set to 1 if you want faster code.
 ;   It will cause ReadBit to be inlined, and some other assorted changes.
 ;   Makes decompressor 37 bytes longer, but about 10 cycles faster per bit.

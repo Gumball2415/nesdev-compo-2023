@@ -14,7 +14,12 @@
 ;
 
 .export read_pads
-.importzp cur_keys, new_keys, temp1_16, temp2_16, temp3_16
+.importzp cur_keys, new_keys
+.segment "ZEROPAGE"
+thisRead:      .res 2
+firstRead:     .res 2
+lastFrameKeys: .res 2
+
 
 JOY1      = $4016
 JOY2      = $4017
@@ -31,9 +36,6 @@ DAS_SPEED = 3
 
 .segment "PRGFIXED_C000"
 .proc read_pads
-thisRead = temp1_16
-firstRead = temp2_16
-lastFrameKeys = temp3_16
 
   ; store the current keypress state to detect key-down later
   lda cur_keys

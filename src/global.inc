@@ -5,13 +5,13 @@
 .define GLOBAL_INC
 
 ; global zeropage stuff
-.globalzp sys_state
-.globalzp sys_mode
 .globalzp temp1_8
 .globalzp temp2_8
 .globalzp temp1_16
 .globalzp temp2_16
 .globalzp temp3_16
+.globalzp sys_state
+.globalzp sys_mode
 .globalzp nmis
 
 ; init.s
@@ -19,10 +19,11 @@
 
 ; main.s
 .global main, nmi_handler, irq_handler, reset_handler, load_ptr_temp1_16
-.global update_graphics
+.global update_graphics, wait_x_frames
 .globalzp cur_keys, new_keys, oam_used, shadow_oam_ptr
 
 ; music.s
+.globalzp music_is_playing
 .global start_music, run_music
 
 ; pads.s

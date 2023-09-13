@@ -2,6 +2,15 @@
 .include "nes.inc"
 .import nmi_handler, reset_handler, irq_handler
 
+.segment "ZEROPAGE"
+temp1_8:        .res 1
+temp2_8:        .res 1
+temp1_16:       .res 2
+temp2_16:       .res 2
+temp3_16:       .res 2
+sys_state:      .res 1
+sys_mode:       .res 1
+
 ; iNES 2.0
 .segment "HEADER"
 	; comments regarding header format taken from
