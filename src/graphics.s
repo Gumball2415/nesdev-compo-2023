@@ -17,7 +17,7 @@ shadow_palette: .res 32 ; we store in zeropage for speed
 pal_fade_dec: .res 1
 img_progress: .res 1
 img_index:    .res 1
-img_pointer:  .tag img_DATA_PTR
+img:          .tag img_DATA_PTR
 
 
 .segment "PRG0_8000"
@@ -25,7 +25,7 @@ universal_tileset:
 	.incbin "obj/universal.toku"
 universal_pal:
 	.repeat 8
-		.byte $0F,$03,$24,$30
+		.byte $0F,$13,$24,$30
 	.endrepeat
 
 ; TODO: these labeled includes could be generated on compile time
@@ -59,6 +59,22 @@ img_1_bank_2:
 img_1_bank_s:
 	.incbin "obj/img_1/bank_s.toku"
 
+.segment "PRG1_8000"
+img_title_pal:
+	.include "../obj/img_title/pal.s"
+img_title_attr:
+	.include "../obj/img_title/attr.s"
+img_title_oam:
+	.include "../obj/img_title/oam.s"
+img_title_bank_0:
+	.incbin "obj/img_title/bank_0.toku"
+img_title_bank_1:
+	.incbin "obj/img_title/bank_1.toku"
+img_title_bank_2:
+	.incbin "obj/img_title/bank_2.toku"
+img_title_bank_s:
+	.incbin "obj/img_title/bank_s.toku"
+
 
 .segment "PRGFIXED_C000"
 img_0:
@@ -69,13 +85,13 @@ img_0:
 	.addr img_0_bank_1
 	.addr img_0_bank_2
 	.addr img_0_bank_s
-	.addr <.bank(img_0_pal)
-	.addr <.bank(img_0_attr)
-	.addr <.bank(img_0_oam)
-	.addr <.bank(img_0_bank_0)
-	.addr <.bank(img_0_bank_1)
-	.addr <.bank(img_0_bank_2)
-	.addr <.bank(img_0_bank_s)
+	.byte <.bank(img_0_pal)
+	.byte <.bank(img_0_attr)
+	.byte <.bank(img_0_oam)
+	.byte <.bank(img_0_bank_0)
+	.byte <.bank(img_0_bank_1)
+	.byte <.bank(img_0_bank_2)
+	.byte <.bank(img_0_bank_s)
 
 img_1:
 	.addr img_1_pal
@@ -85,17 +101,34 @@ img_1:
 	.addr img_1_bank_1
 	.addr img_1_bank_2
 	.addr img_1_bank_s
-	.addr <.bank(img_1_pal)
-	.addr <.bank(img_1_attr)
-	.addr <.bank(img_1_oam)
-	.addr <.bank(img_1_bank_0)
-	.addr <.bank(img_1_bank_1)
-	.addr <.bank(img_1_bank_2)
-	.addr <.bank(img_1_bank_s)
+	.byte <.bank(img_1_pal)
+	.byte <.bank(img_1_attr)
+	.byte <.bank(img_1_oam)
+	.byte <.bank(img_1_bank_0)
+	.byte <.bank(img_1_bank_1)
+	.byte <.bank(img_1_bank_2)
+	.byte <.bank(img_1_bank_s)
+
+img_title:
+	.addr img_title_pal
+	.addr img_title_attr
+	.addr img_title_oam
+	.addr img_title_bank_0
+	.addr img_title_bank_1
+	.addr img_title_bank_2
+	.addr img_title_bank_s
+	.byte <.bank(img_title_pal)
+	.byte <.bank(img_title_attr)
+	.byte <.bank(img_title_oam)
+	.byte <.bank(img_title_bank_0)
+	.byte <.bank(img_title_bank_1)
+	.byte <.bank(img_title_bank_2)
+	.byte <.bank(img_title_bank_s)
 
 img_table:
 	.addr img_0
 	.addr img_1
+	.addr img_title
 img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
@@ -240,9 +273,9 @@ loop2:
 
 @ptr_load:
 	lda (temp1_16),y
-	sta img_pointer,y
+	sta img,y
 	iny
-	cpy #img_DATA_PTR::img_DATA_PTR_SIZE
+	cpy #.sizeof(img_DATA_PTR)
 	bne @ptr_load
 	
 	; setup loading screen
@@ -286,7 +319,7 @@ loop2:
 	sta sys_mode
 
 	; setup loading screen NMI
-	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
+	lda #NT_2400|OBJ_8X16|BG_0000|VBLANK_NMI
 	sta PPUCTRL
 
 	; switch to universal CHR bank
@@ -299,22 +332,28 @@ loop2:
 	jsr wait_x_frames
 
 	; transfer palettes, attributes, and OAM buffer
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_PAL_LOC
-	lda img_pointer+img_DATA_PTR::img_PAL_PTR
-	ldx img_pointer+img_DATA_PTR::img_PAL_PTR+1
+	lda z:img+img_DATA_PTR::img_PAL_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_PAL_PTR
+	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
 
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_ATTR_LOC
-	lda img_pointer+img_DATA_PTR::img_ATTR_PTR
-	ldx img_pointer+img_DATA_PTR::img_ATTR_PTR+1
+	lda z:img+img_DATA_PTR::img_ATTR_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_ATTR_PTR
+	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$23
 	jsr transfer_img_attr
 
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_OAM_LOC
-	lda img_pointer+img_DATA_PTR::img_OAM_PTR
-	ldx img_pointer+img_DATA_PTR::img_OAM_PTR+1
+	lda z:img+img_DATA_PTR::img_OAM_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_OAM_PTR
+	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
 	jsr load_ptr_temp1_16
 	jsr transfer_img_oam
 
@@ -322,45 +361,57 @@ loop2:
 	lda #0
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_0_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_0_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_0_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_0_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_0_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
 
 	inc s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_1_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_1_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_1_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_1_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_1_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_1_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
 
 	inc s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_2_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_2_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_2_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_2_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_2_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_2_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$00
 	jsr transfer_4k_chr
-	a53_set_prg_safe img_pointer+img_DATA_PTR::img_BANK_S_LOC
-	lda img_pointer+img_DATA_PTR::img_BANK_S_PTR
-	ldx img_pointer+img_DATA_PTR::img_BANK_S_PTR+1
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr

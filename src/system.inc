@@ -36,7 +36,5 @@ sys_MODE_NMIOCCURRED = %10000000
 	img_BANK_1_LOC .byte
 	img_BANK_2_LOC .byte
 	img_BANK_S_LOC .byte
-
-	img_DATA_PTR_SIZE .byte
 .endstruct
 .endif

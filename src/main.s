@@ -280,8 +280,9 @@ program_table_hi:
 	sta sys_state
 
 	; start music with song id #0
-	lda #1
+	lda #2
 	sta img_index
+	lda #0
 	jsr start_music
 	
 	jmp mainloop
@@ -459,17 +460,16 @@ gallery_right:
 
 	lda #$00
 	sta PPUMASK
+	; zero out PPUADDR to avoid messing with the scroll
 	sta PPUADDR
 	sta PPUADDR
 
 	ldy #$13
-	; at this point, the scroll seems to drift?
-
 @wait_dotskip_pixel:
 	dey
 	bne @wait_dotskip_pixel
 .endif
-	
+
 	lda s_PPUMASK
 	sta PPUMASK
 

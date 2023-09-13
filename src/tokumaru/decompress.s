@@ -29,7 +29,7 @@
 
 ; USER-ADJUSTABLE SETTINGS
 
-EXTENDED_FORMAT=1
+EXTENDED_FORMAT=3
 ; ^ Set to 1 if you compressed with -e.
 ;   Makes decompressor 5 bytes shorter. No calculable speed difference.
 ;   If you compressed with -e3, set to 3. If with -e2, set to 2.

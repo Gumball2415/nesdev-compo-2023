@@ -21,7 +21,7 @@ version = 0.0.0
 objlist = header action53 main pads graphics tokumaru/decompress music bhop
 
 # image files
-imglist = img_0 img_1
+imglist = img_0 img_1 img_title
 
 
 AS65 = ca65 $(CFLAGS65)
@@ -137,7 +137,7 @@ $(objdir)/music.asm: $(musdir)/music.asm
 # Rules for CHR data
 
 $(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
-	tools/tokumaru/tokumaru -e -16 $< $@
+	tools/tokumaru/tokumaru -e3 -16 $< $@
 
 # some preprocessed CHR can be directly copied
 $(objdir)/%.chr: $(imgdir)/%.chr
