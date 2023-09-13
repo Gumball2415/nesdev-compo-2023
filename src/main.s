@@ -40,45 +40,121 @@ new_keys:       .res 2
 	lda #1
 	sta A53_REG_VALUE
 
-
-
 	; cycle-counted delay to wait before swapping to CHR bank 2 (3rd image slice)
 	; exactly 64 scanlines
 	lda #%00010000                   ;    2    2  DMC active status bit
 	and SNDCHN                       ;    4    6
-	c_bne @skip_pre_delay            ;    3    9  compensate for cycles stolen by DMC DMA
-	;                                ;   -1    8    (measured approx. 32-36 cycles)
+	c_beq @dpcm_off                  ;    3    9
+	;                                ;    .   ..     -1    8
 
-	ldy #7                           ;    2   10
+	lda s_dmc_4010                   ;    .   ..      4   12
+	and #$0f                         ;    .   ..      2   14
+	clc                              ;    .   ..      2   16
+	adc #1                           ;    .   ..      2   18
+	bne @skip_compensation           ;    .   ..      3   21  always jumps
 
-	@loop:
-		dey         ;  2  2
-		c_bne @loop ;  3  5
-		;           ; -1
-	;                                ;   34   44
+@dpcm_off:
+	;                                ;         9      .   ..
+	inc temp1_8                      ;    5   14      .   ..
+	dec temp1_8                      ;    5   19      .   ..
+	nop                              ;    2   21      .   ..
 
-@skip_pre_delay:
-	ldx #12                          ;    2   46
+@skip_compensation:
+	ldx #11                          ;    2   23
 
 	@delay:
-		ldy #119                          ;   2   2
+		ldy #128                          ;   2   2
 
 		@inner:
 			dey                           ;  2  2
 			c_bne @inner                  ;  3  5
 			;                             ; -1
 
-		;                                 ; 594 596
-		dex                               ;   2 598
-		c_bne @delay                      ;   3 601
+		;                                 ; 639 641
+		dex                               ;   2 643
+		c_bne @delay                      ;   3 646
 		;                                 ;  -1
 
-	;                                ; 7211 7257
+	;                                ; 7105 7128 + s, s = stolen cycles from DPCM playback
+	ldy #7                           ;    2 7130 + s
+	@loop:
+		dey          ;  2  2
+		c_bne @loop  ;  3  5
+	;                    ; -1
+	;                                ;   34 7164 + s
+	nop                              ;    2 7166 + s
+	nop                              ;    2 7168 + s
+	.scope
+		tay                              ;    2  2
+		lda jump_table_lo, y             ;    4  6
+		sta temp1_16                     ;    3  9
+		lda jump_table_hi, y             ;    4 13
+		sta temp1_16+1                   ;    3 16
+		jmp (temp1_16)                   ;    5 21
+	.endscope
+	;                                ;   21 7189 + s
+nop_sled_start:
+.repeat 34
+	nop
+.endrep
+nop_sled_end:
+	;                                ; 68-s 7257
 	ldx $0                           ;    3 7260  dummy
 	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
 
 	dec s_A53_MUTEX
 	rts
+
+	.macro nopsled_ptr_cycles_lo cycles
+		.assert cycles & 1 = 0, error, "cycles must be an even number"
+		.assert (nop_sled_end - (cycles / 2)) >= nop_sled_start, error, "exceeded starting point of nop sled"
+		.byte (.lobyte (nop_sled_end - (cycles / 2)))
+	.endmacro
+	.macro nopsled_ptr_cycles_hi cycles
+		.assert cycles & 1 = 0, error, "cycles must be an even number"
+		.assert (nop_sled_end - (cycles / 2)) >= nop_sled_start, error, "exceeded starting point of nop sled"
+		.byte (.hibyte (nop_sled_end - (cycles / 2)))
+	.endmacro
+jump_table_lo:
+	nopsled_ptr_cycles_lo 68   ; DPCM off
+	nopsled_ptr_cycles_lo 60   ; DPCM rate $0
+	nopsled_ptr_cycles_lo 58   ; DPCM rate $1
+	nopsled_ptr_cycles_lo 58   ; DPCM rate $2
+	nopsled_ptr_cycles_lo 56   ; DPCM rate $3
+	nopsled_ptr_cycles_lo 56   ; DPCM rate $4
+	nopsled_ptr_cycles_lo 54   ; DPCM rate $5
+	nopsled_ptr_cycles_lo 52   ; DPCM rate $6
+	nopsled_ptr_cycles_lo 52   ; DPCM rate $7
+	nopsled_ptr_cycles_lo 50   ; DPCM rate $8
+	nopsled_ptr_cycles_lo 46   ; DPCM rate $9
+	nopsled_ptr_cycles_lo 42   ; DPCM rate $a
+	nopsled_ptr_cycles_lo 40   ; DPCM rate $b
+	nopsled_ptr_cycles_lo 34   ; DPCM rate $c
+	nopsled_ptr_cycles_lo 26   ; DPCM rate $d
+	nopsled_ptr_cycles_lo 18   ; DPCM rate $e
+	nopsled_ptr_cycles_lo  0   ; DPCM rate $f
+	.assert >* = >jump_table_lo, error, "table data crosses a page boundary"
+
+jump_table_hi:
+	nopsled_ptr_cycles_hi 68   ; DPCM off
+	nopsled_ptr_cycles_hi 60   ; DPCM rate $0
+	nopsled_ptr_cycles_hi 58   ; DPCM rate $1
+	nopsled_ptr_cycles_hi 58   ; DPCM rate $2
+	nopsled_ptr_cycles_hi 56   ; DPCM rate $3
+	nopsled_ptr_cycles_hi 56   ; DPCM rate $4
+	nopsled_ptr_cycles_hi 54   ; DPCM rate $5
+	nopsled_ptr_cycles_hi 52   ; DPCM rate $6
+	nopsled_ptr_cycles_hi 52   ; DPCM rate $7
+	nopsled_ptr_cycles_hi 50   ; DPCM rate $8
+	nopsled_ptr_cycles_hi 46   ; DPCM rate $9
+	nopsled_ptr_cycles_hi 42   ; DPCM rate $a
+	nopsled_ptr_cycles_hi 40   ; DPCM rate $b
+	nopsled_ptr_cycles_hi 34   ; DPCM rate $c
+	nopsled_ptr_cycles_hi 26   ; DPCM rate $d
+	nopsled_ptr_cycles_hi 18   ; DPCM rate $e
+	nopsled_ptr_cycles_hi  0   ; DPCM rate $f
+	.assert >* = >jump_table_hi, error, "table data crosses a page boundary"
+
 .endproc
 
 program_table_lo:

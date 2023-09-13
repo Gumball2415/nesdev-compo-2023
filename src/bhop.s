@@ -117,6 +117,10 @@ effect_dpcm_offset: .byte $00
 ; Zxx
 effect_dac_buffer: .byte $00
 
+; shadow copy of $4010 for external usage
+.global s_dmc_4010
+s_dmc_4010: .byte $00
+
 
         .segment BHOP_PLAYER_SEGMENT
         ; global
@@ -2452,6 +2456,9 @@ skip_pitch:
         lda scratch_byte
         and #%01111111 ; do NOT enable IRQs
         sta $4010      ; write rate and loop enable
+
+        sta s_dmc_4010 ; MOD: save shadow copy of $4010 for external usage
+
         lda (bhop_ptr), y
         iny
         sta scratch_byte
