@@ -22,10 +22,6 @@ new_keys:       .res 2
 	@wait_sprite0_reset:
 		bit PPUSTATUS
 		bvs @wait_sprite0_reset
-
-	@wait_vblank_end:
-		bit PPUSTATUS
-		bvs @wait_vblank_end
 .endif
 
 	inc s_A53_MUTEX
@@ -105,6 +101,11 @@ nop_sled_end:
 	a53_write A53_REG_CHR_BANK, #2   ;   15 7275
 
 	dec s_A53_MUTEX
+
+	; let update_graphics know that we have sprite0
+	lda sys_mode
+	ora #sys_MODE_SPRITE0SET
+	sta sys_mode
 	rts
 
 	.macro nopsled_ptr_cycles_lo cycles
@@ -226,6 +227,10 @@ program_table_hi:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
+	; let update_graphics know that we have sprite0
+	lda sys_mode
+	ora #sys_MODE_SPRITE0SET
+	sta sys_mode
 	; prepare for partial CHR load
 	lda #0
 	sta PPUMASK
@@ -535,24 +540,76 @@ gallery_right:
 	jsr update_scrolling
 
 .if ::SKIP_DOT_DISABLE
+		lda sys_mode
+		and #sys_MODE_SPRITE0SET
+		beq @skip_xy_set
 	@wait_vblank_end:
 		bit PPUSTATUS
 		bvs @wait_vblank_end
 
 		lda #$00
 		sta PPUMASK
-		; zero out PPUADDR to avoid messing with the scroll
-		sta PPUADDR
-		sta PPUADDR
+		;    First      Second
+		; /=========\ /=======\
+		; 0 0yy NN YY YYY XXXXX
+		;   ||| || || ||| +++++-- coarse X scroll
+		;   ||| || ++-+++-------- coarse Y scroll
+		;   ||| ++--------------- nametable select
+		;   +++------------------ fine Y scroll
 
-		ldy #$11
-	@wait_dotskip_pixel:
+		; prepare first write
+		ldx ppu_scroll_y
+		inx ; we're off by one scanline, increment to compensate
+		txa
+		rol
+		rol
+		rol
+		rol
+		tax
+		ror
+		and #%00000011
+		; YY
+		sta temp1_8
+		txa
+		and #%00110000
+		ora temp1_8
+		; 0yy
+		sta temp1_8
+		lda s_PPUCTRL
+		and #%00000011
+		asl
+		asl
+		ora temp1_8
+		; NN
+		sta temp1_8
+
+		; prepare second write
+		txa
+		and #%11100000
+		; YYY
+		sta temp2_8
+		lda ppu_scroll_x
+		lsr
+		lsr
+		lsr
+		ora temp2_8
+		; XXXXX
+		sta temp2_8
+		
+		lda temp1_8
+		sta PPUADDR
+		lda temp2_8
+		sta PPUADDR
+		
+		lda sys_mode
+		and #($FF - sys_MODE_SPRITE0SET)
+		sta sys_mode
+
+		ldy #$12
+	@wait_hblank:
 		dey
-		bne @wait_dotskip_pixel
-	; this causes a visible glitch on scanline 0
-	; we can't do anything about it, unless we employ the split x/y scroll trick
-	; and even then, we must deal with massaging the scroll
-	; too much effort to hide a visual artifact that's never visible in oversacn anyway
+		bne @wait_hblank
+	@skip_xy_set:
 .endif
 
 	lda s_PPUCTRL
