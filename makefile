@@ -33,7 +33,7 @@ objdir = obj
 srcdir = src
 imgdir = gfx
 outdir = output
-musdir = music/no_guarantees
+musdir = music
 make_dirs = $(objdir) $(objdir)/tokumaru $(objdir)/bhop $(outdir) $(imgoutdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run

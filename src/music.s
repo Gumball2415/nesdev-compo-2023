@@ -13,7 +13,7 @@ bhop_music_data:
 	.endscope
 	.export bhop_music_data
 
-.segment "PRGFIXED_E000"
+.segment "PRGFIXED_C000"
 ;;
 ; initializes the bhop music engine and starts playing a song
 ; @param A song index within the module

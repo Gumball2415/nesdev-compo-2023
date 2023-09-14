@@ -4,7 +4,7 @@
 ; Note that we're basically only overriding BHOP_PLAYER_SEGMENT, but we do need to include all of the rest.
 
 __BHOP_CONFIG = 1
-.define BHOP_PLAYER_SEGMENT "PRGFIXED_E000"
+.define BHOP_PLAYER_SEGMENT "PRGFIXED_C000"
 .define BHOP_RAM_SEGMENT "BSS"
 .define BHOP_ZP_SEGMENT "ZEROPAGE"
 

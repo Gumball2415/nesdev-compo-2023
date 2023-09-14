@@ -17,14 +17,16 @@ new_keys:       .res 2
 .proc gallery_display_kernel_ntsc
 	; here, we have a budget of 10528 cycles before sprite 0 hits
 
+.if .not(::SKIP_DOT_DISABLE)
 	; delay until it's ok to poll for sprite 0
-@wait_sprite0_reset:
-	bit PPUSTATUS
-	bvs @wait_sprite0_reset
+	@wait_sprite0_reset:
+		bit PPUSTATUS
+		bvs @wait_sprite0_reset
 
-@wait_vblank_end:
-	bit PPUSTATUS
-	bvs @wait_vblank_end
+	@wait_vblank_end:
+		bit PPUSTATUS
+		bvs @wait_vblank_end
+.endif
 
 	inc s_A53_MUTEX
 	; splitting the a53_write macro in half for timing reasons 1/2
@@ -214,9 +216,11 @@ program_table_hi:
 	sta s_PPUCTRL
 	jsr update_graphics
 
+.if .not(::SKIP_DOT_DISABLE)
 @wait_sprite0_reset:
 	bit PPUSTATUS
 	bvs @wait_sprite0_reset
+.endif
 
 @check_sprite0:
 	bit PPUSTATUS
@@ -358,8 +362,9 @@ program_table_hi:
 	; start music with song id #0
 	lda #2
 	sta img_index
-	lda #0
+	lda #1
 	jsr start_music
+	
 	
 	jmp mainloop
 .endproc
@@ -530,27 +535,31 @@ gallery_right:
 	jsr update_scrolling
 
 .if ::SKIP_DOT_DISABLE
-@wait_vblank_end:
-	bit PPUSTATUS
-	bvs @wait_vblank_end
+	@wait_vblank_end:
+		bit PPUSTATUS
+		bvs @wait_vblank_end
 
-	lda #$00
-	sta PPUMASK
-	; zero out PPUADDR to avoid messing with the scroll
-	sta PPUADDR
-	sta PPUADDR
+		lda #$00
+		sta PPUMASK
+		; zero out PPUADDR to avoid messing with the scroll
+		sta PPUADDR
+		sta PPUADDR
 
-	ldy #$13
-@wait_dotskip_pixel:
-	dey
-	bne @wait_dotskip_pixel
+		ldy #$11
+	@wait_dotskip_pixel:
+		dey
+		bne @wait_dotskip_pixel
+	; this causes a visible glitch on scanline 0
+	; we can't do anything about it, unless we employ the split x/y scroll trick
+	; and even then, we must deal with massaging the scroll
+	; too much effort to hide a visual artifact that's never visible in oversacn anyway
 .endif
-
-	lda s_PPUMASK
-	sta PPUMASK
 
 	lda s_PPUCTRL
 	sta PPUCTRL
+
+	lda s_PPUMASK
+	sta PPUMASK
 
 	rts
 .endproc
