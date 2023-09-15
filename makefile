@@ -98,14 +98,11 @@ imgoutdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
 imgbmprawlistmac = $(foreach o,$(imglist),$(o)/$(o).bmp)
 imgmiscrawlistmac = $(foreach o,$(imglist),$(o)/pal $(o)/attr $(o)/oam)
 imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
-imgmiscobjlistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).o)
 
 imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
 imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).donut)
 imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
 imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
-imgoutbmplistmac = $(foreach o,$(imgbmprawlistmac),$(objdir)/$(o))
-imginbmplistmac = $(foreach o,$(imgbmprawlistmac),$(imgdir)/$(o))
 
 
 $(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
@@ -136,10 +133,6 @@ $(objdir)/music.asm: $(musdir)/music.asm
 
 # Rules for CHR data
 
-# donut is under GPL v3, so we just import it via git submodule
-$(objdir)/%.donut: $(objdir)/%.chr tools/external/action53/tools/donut$(DOTEXE)
-	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
-
 # some preprocessed CHR can be directly copied
 $(objdir)/%.chr: $(imgdir)/%.chr
 	cp $< $@
@@ -152,21 +145,22 @@ $(objdir)/%.bmp: $(imgdir)/%.bmp
 	cp $< $@
 
 # prepare input bitmaps
-# ensure the bmp2toku pipeline is preserved
+# ensure the bmp 2 donut pipeline is preserved
 $(imgbankscmplistmac): $(imgbankschrlistmac)
 $(imgbankschrlistmac): $(imgbanksbmplistmac)
-$(imgbanksbmplistmac): $(imgoutbmplistmac)
-$(imgoutbmplistmac): $(imginbmplistmac)
-$(imginbmplistmac): $(imgbmprawlistmac)
+$(imgbanksbmplistmac): $(imgbmprawlistmac)
 $(imgbmprawlistmac):
 	cp $(imgdir)/$@ $(objdir)/$@
 	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
 
 # prepare auxilliary data
-$(imgmiscobjlistmac): $(imgmiscsrclistmac)
 $(imgmiscsrclistmac): $(imgmiscrawlistmac)
 $(imgmiscrawlistmac):
 	cp $(imgdir)/$@.s $(objdir)/$@.s
+
+# donut is under GPL v3, so we just import it via git submodule
+$(objdir)/%.donut: $(objdir)/%.chr tools/external/action53/tools/donut$(DOTEXE)
+	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
 
 tools/external/action53/tools/donut$(DOTEXE):
 	cd tools/external/action53 && $(MAKE) tools/donut$(DOTEXE)
