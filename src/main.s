@@ -336,11 +336,6 @@ program_table_hi:
 	lda #<universal_tileset
 	ldx #>universal_tileset
 	jsr load_ptr_temp1_16
-	lda #$00
-	jsr transfer_4k_chr
-	lda #<universal_tileset
-	ldx #>universal_tileset
-	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
 
@@ -565,7 +560,7 @@ gallery_right:
 		rol
 		rol
 		rol
-		tax
+		tax ; for first 0yy and second YYY
 		ror
 		and #%00000011
 		; YY
