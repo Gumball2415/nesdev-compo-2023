@@ -49,7 +49,4 @@
 ; bhop.s -- NOTE: not included in the file
 .global s_dmc_4010
 
-; tokumaru/decompress.s_PPUCTRL
-.global DecompressTokumaru
-
 .endif

@@ -22,7 +22,7 @@ img:          .tag img_DATA_PTR
 
 .segment "PRG0_8000"
 universal_tileset:
-	.incbin "obj/universal.toku"
+	.incbin "obj/universal.donut"
 universal_pal:
 	.repeat 8
 		.byte $0F,$13,$24,$30
@@ -36,13 +36,13 @@ img_0_attr:
 img_0_oam:
 	.include "../obj/img_0/oam.s"
 img_0_bank_0:
-	.incbin "obj/img_0/bank_0.toku" 
+	.incbin "obj/img_0/bank_0.donut" 
 img_0_bank_1:
-	.incbin "obj/img_0/bank_1.toku"
+	.incbin "obj/img_0/bank_1.donut"
 img_0_bank_2:
-	.incbin "obj/img_0/bank_2.toku"
+	.incbin "obj/img_0/bank_2.donut"
 img_0_bank_s:
-	.incbin "obj/img_0/bank_s.toku"
+	.incbin "obj/img_0/bank_s.donut"
 
 img_1_pal:
 	.include "../obj/img_1/pal.s"
@@ -51,13 +51,13 @@ img_1_attr:
 img_1_oam:
 	.include "../obj/img_1/oam.s"
 img_1_bank_0:
-	.incbin "obj/img_1/bank_0.toku"
+	.incbin "obj/img_1/bank_0.donut"
 img_1_bank_1:
-	.incbin "obj/img_1/bank_1.toku"
+	.incbin "obj/img_1/bank_1.donut"
 img_1_bank_2:
-	.incbin "obj/img_1/bank_2.toku"
+	.incbin "obj/img_1/bank_2.donut"
 img_1_bank_s:
-	.incbin "obj/img_1/bank_s.toku"
+	.incbin "obj/img_1/bank_s.donut"
 
 .segment "PRG1_8000"
 img_title_pal:
@@ -67,13 +67,13 @@ img_title_attr:
 img_title_oam:
 	.include "../obj/img_title/oam.s"
 img_title_bank_0:
-	.incbin "obj/img_title/bank_0.toku"
+	.incbin "obj/img_title/bank_0.donut"
 img_title_bank_1:
-	.incbin "obj/img_title/bank_1.toku"
+	.incbin "obj/img_title/bank_1.donut"
 img_title_bank_2:
-	.incbin "obj/img_title/bank_2.toku"
+	.incbin "obj/img_title/bank_2.donut"
 img_title_bank_s:
-	.incbin "obj/img_title/bank_s.toku"
+	.incbin "obj/img_title/bank_s.donut"
 
 
 .segment "PRGFIXED_C000"
@@ -163,6 +163,7 @@ loadscreen_sprite0_data:
 ; decompresses and transfers 4K chr data to PPU
 ; @param A base address of CHR page ($00 or $10)
 ; @param temp1_16 pointer to compressed chr data
+.import donut_block_ayx
 .proc transfer_4k_chr
 	bit PPUSTATUS
 	sta temp2_16+1
@@ -170,7 +171,10 @@ loadscreen_sprite0_data:
 	ldy #0
 	sty temp2_16+0
 	sty PPUADDR
-	jsr DecompressTokumaru
+	lda temp1_16+1
+	ldy temp1_16+0
+	ldx #64
+	jsr donut_block_ayx
 
 	rts
 .endproc
@@ -640,6 +644,8 @@ txt_now_loading:
 	rts
 .endproc
 
+;;
+; interrupt protection for PPU data. call before loading data to A/X/Y
 .proc sync_ppuaddr_ptr
 	bit sys_mode
 	bpl @skip_sync
@@ -659,6 +665,8 @@ txt_now_loading:
 	rts
 .endproc
 
+;;
+; interrupt protection for PPU data. call after storing to PPUDATA
 .proc inc_ppuaddr_ptr
 	inc temp2_16+0
 	bne @skip_inc

@@ -23,8 +23,11 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 ## License
 
 - This project is licensed under the MIT license.
-- Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2022-2023 zeta0134.
+- Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2023 zeta0134.
+- bhop is licensed under the MIT-0 license. Copyright 2023 zeta0134.
+- Donut NES CHR encoder is licensed under GNU GPL v3+. Donut NES CHR decoder is licensed under the GNU All-Permissive License. Copyright 2019 Johnathan Roatch
 - nrom-template related functions and compiling scripts are licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
+- "SHVTERA" image conversion scripts are licensed under the MIT-0 license. Copyright 2023 Persune
 
 ## Credits
 

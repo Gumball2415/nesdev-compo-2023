@@ -18,7 +18,7 @@ version = 0.0.0
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = header action53 main pads graphics tokumaru/decompress music bhop
+objlist = header action53 main pads graphics donut music bhop
 
 # image files
 imglist = img_0 img_1 img_title
@@ -34,7 +34,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music
-make_dirs = $(objdir) $(objdir)/tokumaru $(objdir)/bhop $(outdir) $(imgoutdirlistmac)
+make_dirs = $(objdir) $(objdir)/bhop $(outdir) $(imgoutdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -101,7 +101,7 @@ imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
 imgmiscobjlistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).o)
 
 imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
-imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).toku)
+imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).donut)
 imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
 imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
 imgoutbmplistmac = $(foreach o,$(imgbmprawlistmac),$(objdir)/$(o))
@@ -125,7 +125,7 @@ $(objdir)/music.o: $(objdir)/music.asm
 $(objdir)/graphics.o: \
 	$(imgbankscmplistmac) \
 	$(imgmiscsrclistmac) \
-	$(objdir)/universal.toku \
+	$(objdir)/universal.donut \
 
 
 # Rules for Dn-FT exports
@@ -136,8 +136,9 @@ $(objdir)/music.asm: $(musdir)/music.asm
 
 # Rules for CHR data
 
-$(objdir)/%.toku: $(objdir)/%.chr tools/tokumaru/tokumaru
-	tools/tokumaru/tokumaru -e3 -16 $< $@
+# donut is under GPL v3, so we just import it via git submodule
+$(objdir)/%.donut: $(objdir)/%.chr tools/external/action53/tools/donut$(DOTEXE)
+	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
 
 # some preprocessed CHR can be directly copied
 $(objdir)/%.chr: $(imgdir)/%.chr
@@ -167,6 +168,9 @@ $(imgmiscsrclistmac): $(imgmiscrawlistmac)
 $(imgmiscrawlistmac):
 	cp $(imgdir)/$@.s $(objdir)/$@.s
 
+tools/external/action53/tools/donut$(DOTEXE):
+	cd tools/external/action53 && $(MAKE) tools/donut$(DOTEXE)
+
 # Rules for directories
 
  $(make_dirs):
@@ -175,5 +179,3 @@ $(imgmiscrawlistmac):
 
 # Rules for external tools
 
-tools/tokumaru/tokumaru:
-	cd tools/tokumaru && $(MAKE) tokumaru

@@ -1,0 +1,3 @@
+[submodule "tools/external/action53"]
+	path = tools/external/action53
+	url = https://github.com/pinobatch/action53.git
