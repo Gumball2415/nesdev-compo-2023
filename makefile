@@ -96,8 +96,11 @@ objlistmac = $(foreach o,$(objlist),$(objdir)/$(o).o)
 imgoutdirlistmac = $(foreach o,$(imglist),$(objdir)/$(o))
 
 imgbmprawlistmac = $(foreach o,$(imglist),$(o)/$(o).bmp)
-imgmiscrawlistmac = $(foreach o,$(imglist),$(o)/pal $(o)/attr $(o)/oam)
+imgmiscrawlistmac = $(foreach o,$(imglist),$(o)/pal $(o)/oam)
 imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
+
+imgattrlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.bin)
+imgpartialnamlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.nam)
 
 imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
 imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).donut)
@@ -122,6 +125,7 @@ $(objdir)/music.o: $(objdir)/music.asm
 $(objdir)/graphics.o: \
 	$(imgbankscmplistmac) \
 	$(imgmiscsrclistmac) \
+	$(imgattrlistmac) \
 	$(objdir)/universal.donut \
 
 
@@ -153,6 +157,13 @@ $(imgbmprawlistmac):
 	cp $(imgdir)/$@ $(objdir)/$@
 	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
 
+# prepare attribute tables
+$(imgattrlistmac): $(imgpartialnamlistmac)
+$(imgpartialnamlistmac): $(imgbmprawlistmac) $(imgmiscsrclistmac)
+
+$(imgattrlistmac): $(objdir)/%/attr.bin: $(objdir)/%/attr.nam
+	tail -c +961 $< > $@
+
 # prepare auxilliary data
 $(imgmiscsrclistmac): $(imgmiscrawlistmac)
 $(imgmiscrawlistmac):
@@ -173,3 +184,11 @@ $(make_dirs):
 
 # Rules for external tools
 
+
+
+# Rules that require secondary expansion:
+.SECONDEXPANSION:
+
+# use savtool to generate attribute tables
+$(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(objdir)/$$*/$$*.bmp $$(dir $$@)/pal.s
+	$(PY) tools/savtool.py --palette=`grep '\.byte' $(dir $@)pal.s | sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` --attr-only $< $@

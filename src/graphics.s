@@ -38,7 +38,7 @@ universal_pal:
 img_0_pal:
 	.include "../obj/img_0/pal.s"
 img_0_attr:
-	.include "../obj/img_0/attr.s"
+	.incbin "../obj/img_0/attr.bin"
 img_0_oam:
 	.include "../obj/img_0/oam.s"
 img_0_bank_0:
@@ -53,7 +53,7 @@ img_0_bank_s:
 img_1_pal:
 	.include "../obj/img_1/pal.s"
 img_1_attr:
-	.include "../obj/img_1/attr.s"
+	.incbin "../obj/img_1/attr.bin"
 img_1_oam:
 	.include "../obj/img_1/oam.s"
 img_1_bank_0:
@@ -69,7 +69,7 @@ img_1_bank_s:
 img_title_pal:
 	.include "../obj/img_title/pal.s"
 img_title_attr:
-	.include "../obj/img_title/attr.s"
+	.incbin "../obj/img_title/attr.bin"
 img_title_oam:
 	.include "../obj/img_title/oam.s"
 img_title_bank_0:
