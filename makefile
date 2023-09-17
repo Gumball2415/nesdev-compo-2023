@@ -34,7 +34,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music
-make_dirs = $(objdir) $(objdir)/bhop $(outdir) $(imgoutdirlistmac)
+make_dirs = $(objdir) $(outdir) $(imgoutdirlistmac)
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -167,7 +167,7 @@ tools/external/action53/tools/donut$(DOTEXE):
 
 # Rules for directories
 
- $(make_dirs):
+$(make_dirs):
 	@mkdir -p -v $@ 2>/dev/null
 
 

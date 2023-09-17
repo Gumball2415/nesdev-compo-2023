@@ -3,8 +3,9 @@
 .define SYSTEM_INC
 
 .enum STATE_ID
-	sys_TITLESCR
-	sys_GALLERYS
+	sys_TITLE
+	sys_GALLERY
+	sys_CREDITS
 
 	sys_ID_COUNT
 .endenum

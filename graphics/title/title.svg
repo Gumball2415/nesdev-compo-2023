@@ -29,8 +29,8 @@
      inkscape:document-units="mm"
      showgrid="true"
      inkscape:zoom="3.1251123"
-     inkscape:cx="136.3151"
-     inkscape:cy="54.718034"
+     inkscape:cx="146.23474"
+     inkscape:cy="103.67627"
      inkscape:window-width="1920"
      inkscape:window-height="1057"
      inkscape:window-x="-8"
@@ -54,7 +54,7 @@
        inkscape:collect="always"
        id="linearGradient4719">
       <stop
-         style="stop-color:#acacac;stop-opacity:1;"
+         style="stop-color:#808080;stop-opacity:1;"
          offset="0"
          id="stop8400" />
       <stop
@@ -94,9 +94,9 @@
        xlink:href="#linearGradient4719"
        id="linearGradient4721"
        x1="62.944031"
-       y1="-2.7404747"
+       y1="0"
        x2="62.944031"
-       y2="37.66967"
+       y2="33.866665"
        gradientUnits="userSpaceOnUse" />
   </defs>
   <g
@@ -104,7 +104,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
-       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:fill markers stroke"
+       style="display:inline;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.264999;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:fill markers stroke"
        id="rect6414"
        width="67.73333"
        height="63.5"
@@ -112,7 +112,7 @@
        y="0"
        transform="scale(-1,1)" />
     <rect
-       style="mix-blend-mode:normal;fill:url(#linearGradient4721);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.402791;stroke-linecap:round;stroke-linejoin:round;paint-order:markers stroke fill"
+       style="display:none;mix-blend-mode:normal;fill:url(#linearGradient4721);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.402791;stroke-linecap:round;stroke-linejoin:round;paint-order:markers stroke fill"
        id="rect4681"
        width="67.73333"
        height="40.047108"
@@ -122,22 +122,22 @@
        ry="0" />
     <text
        xml:space="preserve"
-       transform="matrix(0.38919182,0,0,0.38919182,-73.345418,-10.624188)"
+       transform="matrix(0.36894968,0,0,0.36894968,-67.769242,-9.8102844)"
        id="text234"
-       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;mix-blend-mode:screen;fill:url(#linearGradient1817);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.00208;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;mix-blend-mode:screen;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.00208;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        x="144.48001"
        y="0"><tspan
          x="201.80957"
          y="70.949219"
-         id="tspan11803"><tspan
+         id="tspan981"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan11801">project
+           id="tspan979">project
 </tspan></tspan><tspan
          x="201.80957"
          y="111.38047"
-         id="tspan11807"><tspan
+         id="tspan985"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan11805">SHVTERA
+           id="tspan983">SHVTERA
 </tspan></tspan></text>
   </g>
 </svg>

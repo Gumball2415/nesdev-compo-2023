@@ -24,9 +24,15 @@ img:          .tag img_DATA_PTR
 universal_tileset:
 	.incbin "obj/universal.donut"
 universal_pal:
-	.repeat 8
-		.byte $0F,$13,$24,$30
-	.endrepeat
+	.byte $0f,$13,$24,$30
+	.byte $0f,$38,$31,$11
+	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$0f,$0f,$0f
+
 
 ; TODO: these labeled includes could be generated on compile time
 img_0_pal:
@@ -323,8 +329,11 @@ loop2:
 	sta sys_mode
 
 	; setup loading screen NMI
-	lda #NT_2400|OBJ_8X16|BG_0000|VBLANK_NMI
+	lda s_PPUCTRL
+	pha
+	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
+	sta s_PPUCTRL
 
 	; switch to universal CHR bank
 	a53_set_chr_safe #3
@@ -425,11 +434,18 @@ loop2:
 	sta sys_mode
 
 	pla
+	sta s_PPUCTRL
+	pla
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 	pla
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
+
+	; let the NMI handler know that we're done transferring CHR
+	lda sys_mode
+	and #($FF - sys_MODE_CHRTRANSFER)
+	sta sys_mode
 	
 	rts
 .endproc
@@ -549,7 +565,8 @@ loop2:
 
 .charmap $20, $00
 txt_now_loading:
-	.byte "now loading... "
+	.byte "now loading... ", $04
+	txt_now_loading_size := * - txt_now_loading
 ;;
 ; sets the nametable for gallery view
 ; @param A base address of nametable ($20, $24, $28, or $2C)
@@ -580,17 +597,9 @@ txt_now_loading:
 	lda #<txt_now_loading
 	ldx #>txt_now_loading
 	jsr load_ptr_temp1_16
-	ldy #0
-
-@loop2:
-	lda (temp1_16),y
-	sta PPUDATA
-	iny
-	cpy #15
-	bne @loop2
-
-	lda #$04
-	sta PPUDATA
+	lda #txt_now_loading_size
+	sta temp2_8
+	jsr draw_text
 
 	; draw loading bar
 	lda temp1_8
@@ -604,10 +613,10 @@ txt_now_loading:
 	ldx #22
 	lda #$06
 
-@loop1:
+@loop:
     sta PPUDATA
 	dex
-	bne @loop1
+	bne @loop
 
 	lda #$07
 	sta PPUDATA
@@ -641,6 +650,126 @@ txt_now_loading:
 	bne @loop1
 
 @skip_update:
+	rts
+.endproc
+
+txt_gallery:
+	.byte "gallery"
+	txt_gallery_size := * - txt_gallery
+txt_credits:
+	.byte "credits"
+	txt_credits_size := * - txt_credits
+txt_shvtera_group:
+	.byte "shvtera group ", $04
+	txt_shvtera_group_size := * - txt_shvtera_group
+txt_NesDev_2023:
+	.byte $08,$09,$0A,$0B,$0C,$0D,$0E, " ", $10,$11,$12,$13
+	txt_NesDev_2023_size := * - txt_NesDev_2023
+;;
+; sets the nametable for the title screen
+; @param A base address of nametable ($20, $24, $28, or $2C)
+; @param temp1_8 nametable high byte scratch pointer
+.proc set_title_nametable
+	sta temp1_8
+	tax
+	lda #0
+	tay
+	jsr ppu_clear_nt
+
+	; todo: setup title card nametable
+	
+	; set address to offset $026D
+	; draw option gallery text
+	bit PPUSTATUS
+	inc temp1_8
+	inc temp1_8
+	lda temp1_8
+	sta PPUADDR
+	lda #$6D
+	sta PPUADDR
+	lda #<txt_gallery
+	ldx #>txt_gallery
+	jsr load_ptr_temp1_16
+	lda #txt_gallery_size
+	sta temp2_8
+	jsr draw_text
+	
+	; set address to offset $02AD
+	; draw option credits text
+	lda temp1_8
+	sta PPUADDR
+	lda #$AD
+	sta PPUADDR
+
+	lda #<txt_credits
+	ldx #>txt_credits
+	jsr load_ptr_temp1_16
+	lda #txt_gallery_size
+	sta temp2_8
+	jsr draw_text
+	
+	; set address to offset $032F
+	; draw shvtera text
+	inc temp1_8
+	lda temp1_8
+	sta PPUADDR
+	lda #$2F
+	sta PPUADDR
+
+	lda #<txt_shvtera_group
+	ldx #>txt_shvtera_group
+	jsr load_ptr_temp1_16
+	lda #txt_shvtera_group_size
+	sta temp2_8
+	jsr draw_text
+	
+	; set address to offset $0352
+	; draw nesdev text
+	lda temp1_8
+	sta PPUADDR
+	lda #$52
+	sta PPUADDR
+
+	lda #<txt_NesDev_2023
+	ldx #>txt_NesDev_2023
+	jsr load_ptr_temp1_16
+	lda #txt_NesDev_2023_size
+	sta temp2_8
+	jsr draw_text
+	
+	; write attributes for NesDev text
+	lda temp1_8
+	sta PPUADDR
+	lda #$F4
+	sta PPUADDR
+	lda #%01000000
+	sta PPUDATA
+	lda #%01010000
+	sta PPUDATA
+	lda #%01010000
+	sta PPUDATA
+	lda #%00010000
+	sta PPUDATA
+
+	rts
+.endproc
+
+.proc load_titlescreen
+	rts
+.endproc
+
+;;
+; helper function to draw text. set PPUADDR before calling
+; @param temp2_8 size of raw text data
+; @param temp1_16 pointer to raw text data
+.proc draw_text
+	ldy #0
+@textprint_loop:
+	lda (temp1_16),y
+	sta PPUDATA
+	iny
+	cpy temp2_8
+	bne @textprint_loop
 	rts
 .endproc
 

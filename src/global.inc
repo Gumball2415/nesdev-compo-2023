@@ -30,6 +30,7 @@
 .global read_pads
 
 ; graphics.s
+.global set_title_nametable, load_titlescreen
 .global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr
 .global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .global set_gallery_nametable, set_gallery_loading_screen, transfer_img_pal

@@ -160,13 +160,42 @@ jump_table_hi:
 
 .endproc
 
+.proc title_display_kernel_ntsc
+
+.if .not(::SKIP_DOT_DISABLE)
+	; delay until it's ok to poll for sprite 0
+	@wait_sprite0_reset:
+		bit PPUSTATUS
+		bvs @wait_sprite0_reset
+.endif
+
+	inc s_A53_MUTEX
+	; splitting the a53_write macro in half for timing reasons 1/2
+	lda #A53_REG_CHR_BANK
+	sta z:s_A53_REG_SELECT
+
+@wait_sprite0_hit:
+	bit PPUSTATUS
+	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
+
+	; let update_graphics know that we have sprite0
+	lda sys_mode
+	ora #sys_MODE_SPRITE0SET
+	sta sys_mode
+	rts
+.endproc
+
+
+
 program_table_lo:
 	.byte .lobyte(title_subroutine)
 	.byte .lobyte(gallery_subroutine)
+	.byte .lobyte(credits_subroutine)
 
 program_table_hi:
 	.byte .hibyte(title_subroutine)
 	.byte .hibyte(gallery_subroutine)
+	.byte .hibyte(credits_subroutine)
 
 .proc nmi_handler
 	pha
@@ -207,14 +236,8 @@ program_table_hi:
 	lda #$06
 	sta shadow_oam_ptr+1
 	; overwrite PPUCTRL and s_A53_CHR_BANK
-	lda s_PPUCTRL
-	pha
-	lda s_A53_CHR_BANK
-	pha
 	lda #3
 	sta s_A53_CHR_BANK
-	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
-	sta s_PPUCTRL
 	jsr update_graphics
 
 .if .not(::SKIP_DOT_DISABLE)
@@ -236,9 +259,6 @@ program_table_hi:
 	sta PPUMASK
 	pla
 	sta s_A53_CHR_BANK
-	pla
-	sta s_PPUCTRL
-	sta PPUCTRL
 	a53_set_chr s_A53_CHR_BANK
 	lda #$07
 	sta shadow_oam_ptr+1
@@ -306,7 +326,7 @@ program_table_hi:
 
 	; Set PRG and CHR bank
 	jsr init_action53
-	lda #0
+	lda #3
 	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
 	lda #0
@@ -325,12 +345,6 @@ program_table_hi:
 	; as we are in vblank, transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
 
-	; clear current nametable
-	lda #$00
-	ldx #$20
-	ldy #$00
-	jsr ppu_clear_nt
-
 	; set up universal bank
 	a53_set_chr #3
 	lda #<universal_tileset
@@ -347,7 +361,7 @@ program_table_hi:
 	sta sys_mode
 
 	; enable NMI immediately
-	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
+	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 
@@ -356,7 +370,7 @@ program_table_hi:
 	sta s_PPUMASK
 
 	; set system state to title screen
-	lda #STATE_ID::sys_GALLERYS
+	lda #STATE_ID::sys_TITLE
 	sta sys_state
 
 	; start music with song id #0
@@ -364,7 +378,6 @@ program_table_hi:
 	sta img_index
 	lda #1
 	jsr start_music
-	
 	
 	jmp mainloop
 .endproc
@@ -396,8 +409,47 @@ program_table_hi:
 .endproc
 
 .proc title_subroutine
+	lda sys_mode
+	and #sys_MODE_CHRDONE
+	bne @skip_init
+	; load screen, tileset, nametable, and palettes associated
+	jsr title_init
+	rts
+
+
+@skip_init:
+	; run logic
+	; todo:  refer to "docs/state machine diagram or whatevs.png"
+
+
+	; display raster title image
+	; jsr title_display_kernel_ntsc
 	rts
 .endproc
+
+.proc title_init
+	; disable rendering
+	lda #0
+	sta PPUMASK
+	sta PPUCTRL
+
+	lda #$20
+	jsr set_title_nametable
+	
+	; let the system know we've already initialized the nametables
+
+	jsr load_titlescreen
+
+	; let the NMI handler know that we're done transferring CHR
+	lda sys_mode
+	ora #sys_MODE_CHRDONE
+	sta sys_mode
+
+	; remove if the stuff up here enables NMI
+	lda s_PPUCTRL
+	sta PPUCTRL
+	rts
+.endproc 
 
 .proc gallery_subroutine
 	lda sys_mode
@@ -494,7 +546,6 @@ gallery_right:
 
 	; let the NMI handler know that we're done transferring CHR
 	lda sys_mode
-	and #($FF - sys_MODE_CHRTRANSFER)
 	ora #sys_MODE_CHRDONE
 	sta sys_mode
 	rts
@@ -544,13 +595,13 @@ gallery_right:
 
 		lda #$00
 		sta PPUMASK
-		;    First      Second
-		; /=========\ /=======\
-		; 0 0yy NN YY YYY XXXXX
-		;   ||| || || ||| +++++-- coarse X scroll
-		;   ||| || ++-+++-------- coarse Y scroll
-		;   ||| ++--------------- nametable select
-		;   +++------------------ fine Y scroll
+		;  First    Second
+		; /======\ /=======\
+		; 00yyNNYY YYY XXXXX
+		;  ||||||| ||| +++++- coarse X scroll
+		;  |||||++-+++------- coarse Y scroll
+		;  |||++------------- nametable select
+		;  +++--------------- fine Y scroll
 
 		; prepare first write
 		ldx ppu_scroll_y
@@ -613,6 +664,10 @@ gallery_right:
 	lda s_PPUMASK
 	sta PPUMASK
 
+	rts
+.endproc
+
+.proc credits_subroutine
 	rts
 .endproc
 
