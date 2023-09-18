@@ -14,7 +14,10 @@ shadow_oam_ptr: .res 2
 shadow_palette: .res 32 ; we store in zeropage for speed
 
 ; misc. stuff
-pal_fade_dec: .res 1
+pal_fade_amt: .res 1
+pal_fade_ctr: .res 1
+pal_fade_int: .res 1
+fade_dir:     .res 1
 img_progress: .res 1
 img_index:    .res 1
 img:          .tag img_DATA_PTR
@@ -139,6 +142,7 @@ loadscreen_sprite0_data:
 
 ; copies the palette from shadow regs to PPU
 ; not interrupt safe!
+; @param pal_fade_amt incremental steps to dim the palette. range is 0 to 4
 .proc transfer_palette
 	bit PPUSTATUS
 	lda #$3F
@@ -146,14 +150,71 @@ loadscreen_sprite0_data:
 	lda #$00
 	sta PPUADDR
 	ldx #0
+	lda pal_fade_amt
+	and #%00000111
+	asl
+	asl
+	asl
+	asl
+	sta temp2_8
 
 @loop:
 	lda shadow_palette,x
+	ldy pal_fade_amt
+	beq @skip_fade
+	sec
+	sbc temp2_8
+	bmi @set_to_black
+	cmp #$0D
+	beq @set_to_black
+	
+	jmp @skip_fade
+	
+@set_to_black:
+	lda #$0F
+
+@skip_fade:
 	sta PPUDATA
 	inx
 	cpx #32
 	bne @loop
 
+	rts
+.endproc
+
+;;
+; @param fade_dir 1 = fade in, -1 = fade out
+; @param pal_fade_ctr increment ticks per frame
+; @param pal_fade_int interval of ticks
+.proc run_fade
+	ldx pal_fade_ctr
+	beq @tick_fade
+
+	dec pal_fade_ctr
+	rts
+
+@tick_fade:
+	lda fade_dir
+	bpl @increment
+	lda pal_fade_amt
+	cmp #4
+	beq @return
+	inc pal_fade_amt
+	jmp @end
+@increment:
+	lda pal_fade_amt
+	beq @return
+	dec pal_fade_amt
+
+@end:
+	lda pal_fade_int
+	sta pal_fade_ctr
+	rts
+
+@return:
+	; fade complete, let NMI know about it
+	lda sys_mode
+	and #($FF - sys_MODE_PALETTEFADE)
 	rts
 .endproc
 
@@ -440,50 +501,11 @@ loop2:
 ;;
 ; fades and transfers palette data to shadow palette
 ; @param temp1_16 pointer to compressed palette data
-; @param pal_fade_dec incremental steps to dim the palette. range is 0 to 4
 .proc transfer_img_pal
 	ldy #0
 
 @loop:
 	lda (temp1_16),y
-	sta temp1_8
-	ldx pal_fade_dec
-	beq @end_fade_loop
-
-@fade_loop:
-	lda temp1_8
-	cmp #$1D
-	beq @set_to_black
-
-	pha ; preserve later for high nybble
-	and #%00001111
-	cmp #$0E
-	bcc @skip_0E_0F_check
-
-	pla ; restore stack
-	jmp @set_to_black
-
-@skip_0E_0F_check:
-	sta temp1_8 ; preserve low nybble
-	pla ; process high nybble
-	and #%11110000
-	beq @set_to_black ; any color with $00 will be decremented to black
-
-	sec
-	sbc #$10
-	ora temp1_8
-	sta temp1_8
-	jmp @fade_tick
-	
-@set_to_black:
-	lda #$0F
-	sta temp1_8
-
-@fade_tick:
-	dex
-	bne @fade_loop
-
-@end_fade_loop:
 	sta shadow_palette,y
 	iny
 	cpy #32
@@ -772,20 +794,6 @@ txt_NesDev_2023:
 	lda #txt_NesDev_2023_size
 	sta temp2_8
 	jsr draw_text
-	
-	; write attributes for NesDev text
-	lda temp1_8
-	sta PPUADDR
-	lda #$F4
-	sta PPUADDR
-	lda #%01000000
-	sta PPUDATA
-	lda #%01010000
-	sta PPUDATA
-	lda #%01010000
-	sta PPUDATA
-	lda #%00010000
-	sta PPUDATA
 
 	rts
 .endproc

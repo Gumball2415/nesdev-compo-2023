@@ -30,13 +30,17 @@
 .global read_pads
 
 ; graphics.s
-.global set_title_nametable, load_titlescreen
+.global set_title_nametable, load_titlescreen, run_fade
 .global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr
 .global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .global set_gallery_nametable, set_gallery_loading_screen, transfer_img_pal
 .global gallery_sprite0_data, gallery_sprite0_data_size, update_progress_bar
 .global sync_ppuaddr_ptr, inc_ppuaddr_ptr, inc_ppuaddr_ptr_chr, universal_pal
 .global img_table_size
+.globalzp pal_fade_int
+.globalzp pal_fade_ctr
+.globalzp pal_fade_amt
+.globalzp fade_dir
 .globalzp shadow_palette
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK

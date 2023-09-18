@@ -208,15 +208,26 @@ program_table_hi:
 
 	inc nmis
 
-	; check if we're interrupting gallery CHR transfer
+	lda #sys_MODE_PALETTEFADE
+	bit sys_mode
+	beq @skip_palettefade
+	; force palette update when fading
 	lda sys_mode
-	and #sys_MODE_GALLERYLOAD
-	beq @not_chr_transfer
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+	lda fade_dir
+	jsr run_fade
+
+	; check if we're interrupting gallery CHR transfer
+@skip_palettefade:
+	lda #sys_MODE_GALLERYLOAD
+	bit sys_mode
+	beq @skip_galleryload
 
 	jsr gallery_chr_transfer_interrupt
 	jmp @skip_update_graphics
 
-@not_chr_transfer:
+@skip_galleryload:
 	jsr update_graphics
 
 @skip_update_graphics:
@@ -380,6 +391,12 @@ program_table_hi:
 	lda #1
 	jsr start_music
 	
+	; init fade
+	lda #4
+	sta pal_fade_amt
+	sta pal_fade_int
+	sta pal_fade_ctr
+	
 	jmp mainloop
 .endproc
 
@@ -422,7 +439,7 @@ program_table_hi:
 	; run logic
 	; todo:  refer to "docs/state machine diagram or whatevs.png"
 
-
+	
 	; display raster title image
 	jsr title_display_kernel_ntsc
 	rts
@@ -440,12 +457,16 @@ program_table_hi:
 	jsr set_title_nametable
 
 	; let the NMI handler know that we're done initializing
+	; let the NMI handler know that we're fading in
 	lda sys_mode
-	ora #sys_MODE_INITDONE
+	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE
 	sta sys_mode
+	
+	; fade in
+	lda #$01
+	sta fade_dir
 
 	; remove if the stuff up here enables NMI
-
 	; enable NMI immediately
 	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
 	sta PPUCTRL
@@ -571,17 +592,6 @@ gallery_right:
 	sta PPUMASK				; disable rendering
 	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
 
-	; transfer palettes
-	lda sys_mode
-	and #sys_MODE_NMIPAL
-	beq @skip_pal
-
-	jsr transfer_palette
-	lda sys_mode
-	and #($FF - sys_MODE_NMIPAL)
-	sta sys_mode
-
-@skip_pal:
 	; transfer OAM
 	lda sys_mode
 	and #sys_MODE_NMIOAM
@@ -593,6 +603,18 @@ gallery_right:
 	sta OAM_DMA
 
 @skip_oam:
+
+	; transfer palettes
+	lda sys_mode
+	and #sys_MODE_NMIPAL
+	beq @skip_pal
+
+	jsr transfer_palette
+	lda sys_mode
+	and #($FF - sys_MODE_NMIPAL)
+	sta sys_mode
+
+@skip_pal:
 	
 	; switch to initial graphics bank
 	a53_set_chr_safe s_A53_CHR_BANK
