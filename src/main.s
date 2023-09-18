@@ -161,7 +161,6 @@ jump_table_hi:
 .endproc
 
 .proc title_display_kernel_ntsc
-
 .if .not(::SKIP_DOT_DISABLE)
 	; delay until it's ok to poll for sprite 0
 	@wait_sprite0_reset:
@@ -177,6 +176,9 @@ jump_table_hi:
 @wait_sprite0_hit:
 	bit PPUSTATUS
 	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
+	dec s_A53_MUTEX
+	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
+	sta PPUCTRL
 
 	; let update_graphics know that we have sprite0
 	lda sys_mode
@@ -237,7 +239,7 @@ program_table_hi:
 	lda #$24
 	jsr update_progress_bar
 	; use shadow oam 2 for sprite 0 hit
-	lda #$06
+	lda #>OAM_SHADOW_2
 	sta shadow_oam_ptr+1
 	; overwrite s_A53_CHR_BANK
 	lda s_A53_CHR_BANK
@@ -266,7 +268,7 @@ program_table_hi:
 	pla
 	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
-	lda #$07
+	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
 	bit PPUSTATUS
 	lda temp2_16+1
@@ -324,7 +326,7 @@ program_table_hi:
 	bne @clrmem
 
 	; set shadow OAM page
-	lda #$07
+	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
 
 	; Set PRG and CHR bank
@@ -372,12 +374,10 @@ program_table_hi:
 
 	; set system state to title screen
 	lda #STATE_ID::sys_TITLE
-	lda #STATE_ID::sys_GALLERY
 	sta sys_state
 
 	; start music with song id #0
 	lda #1
-	sta img_index
 	jsr start_music
 	
 	jmp mainloop
@@ -424,7 +424,7 @@ program_table_hi:
 
 
 	; display raster title image
-	; jsr title_display_kernel_ntsc
+	jsr title_display_kernel_ntsc
 	rts
 .endproc
 
@@ -433,6 +433,8 @@ program_table_hi:
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
+	lda #$20
+	jsr load_titlescreen
 
 	lda #$20
 	jsr set_title_nametable
@@ -445,7 +447,7 @@ program_table_hi:
 	; remove if the stuff up here enables NMI
 
 	; enable NMI immediately
-	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
+	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 	rts
@@ -593,7 +595,7 @@ gallery_right:
 @skip_oam:
 	
 	; switch to initial graphics bank
-	a53_set_chr s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
 
 	; update scroll
 	jsr update_scrolling

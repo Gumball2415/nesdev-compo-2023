@@ -21,7 +21,7 @@ version = 0.0.0
 objlist = header action53 main pads graphics donut music bhop
 
 # image files
-imglist = img_0 img_1 img_title
+imglist = img_0 img_1
 
 
 AS65 = ca65 $(CFLAGS65)
@@ -34,7 +34,7 @@ srcdir = src
 imgdir = gfx
 outdir = output
 musdir = music
-make_dirs = $(objdir) $(outdir) $(imgoutdirlistmac)
+make_dirs = $(objdir) $(outdir) $(imgoutdirlistmac) $(objdir)/img_title
 
 # Occasionally, you need to make "build tools", or programs that run
 # on a PC that convert, compress, or otherwise translate PC data
@@ -123,10 +123,14 @@ $(objdir)/%.o: $(objdir)/%.s
 $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
+	$(objdir)/img_title/bank_0.donut \
+	$(objdir)/img_title/oam.s \
+	$(objdir)/img_title/img_title_nam.donut \
 	$(imgbankscmplistmac) \
 	$(imgmiscsrclistmac) \
 	$(imgattrlistmac) \
 	$(objdir)/universal.donut \
+	$(objdir)/universal_pal.s
 
 
 # Rules for Dn-FT exports
@@ -191,4 +195,38 @@ $(make_dirs):
 
 # use savtool to generate attribute tables
 $(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(objdir)/$$*/$$*.bmp $$(dir $$@)/pal.s
-	$(PY) tools/savtool.py --palette=`grep '\.byte' $(dir $@)pal.s | sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` --attr-only $< $@
+	$(PY) tools/savtool.py \
+	--palette=`grep '\.byte' $(dir $@)pal.s | \
+	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
+	--attr-only $< $@
+
+# special handling for title card
+
+$(objdir)/img_title/bank_0.donut: $(objdir)/img_title/bank_0.chr
+	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
+
+$(objdir)/img_title/img_title_nam.donut: $(objdir)/img_title/img_title.nam
+	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
+
+$(objdir)/img_title/bank_0.chr: $(objdir)/img_title/img_title.sav
+	head -c +4096 $< > $@
+
+$(objdir)/img_title/img_title.nam: $(objdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
+	$(PY) tools/savtool.py  \
+	--palette=`grep '\.byte' $(objdir)/universal_pal.s | \
+	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` $< $@
+
+$(objdir)/img_title/img_title.sav: $(objdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
+	$(PY) tools/savtool.py \
+	--palette=`grep '\.byte' $(objdir)/universal_pal.s | \
+	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` $< $@
+
+$(objdir)/universal_pal.s: universal_pal.s
+universal_pal.s:
+	cp $(imgdir)/$@ $(objdir)/$@
+
+$(objdir)/img_title/oam.s: img_title/oam.s
+img_title/oam.s:
+	cp $(imgdir)/$@ $(objdir)/$@
+
+$(imgattrlistmac): $(objdir)/%/attr.bin: $(objdir)/%/attr.nam

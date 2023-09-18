@@ -22,16 +22,17 @@ img:          .tag img_DATA_PTR
 
 .segment "PRG0_8000"
 universal_tileset:
-	.incbin "obj/universal.donut"
+	.incbin "../obj/universal.donut"
 universal_pal:
-	.byte $0f,$13,$24,$30
-	.byte $0f,$38,$31,$11
-	.byte $0f,$0f,$0f,$0f
-	.byte $0f,$0f,$0f,$0f
-	.byte $0f,$13,$24,$30
-	.byte $0f,$0f,$0f,$0f
-	.byte $0f,$0f,$0f,$0f
-	.byte $0f,$0f,$0f,$0f
+	.include "../obj/universal_pal.s"
+
+; title image is exception
+img_title_nam:
+	.incbin "../obj/img_title/img_title_nam.donut"
+img_title_oam:
+	.include "../obj/img_title/oam.s"
+img_title_bank_0:
+	.incbin "../obj/img_title/bank_0.donut"
 
 
 ; TODO: these labeled includes could be generated on compile time
@@ -42,13 +43,13 @@ img_0_attr:
 img_0_oam:
 	.include "../obj/img_0/oam.s"
 img_0_bank_0:
-	.incbin "obj/img_0/bank_0.donut" 
+	.incbin "../obj/img_0/bank_0.donut" 
 img_0_bank_1:
-	.incbin "obj/img_0/bank_1.donut"
+	.incbin "../obj/img_0/bank_1.donut"
 img_0_bank_2:
-	.incbin "obj/img_0/bank_2.donut"
+	.incbin "../obj/img_0/bank_2.donut"
 img_0_bank_s:
-	.incbin "obj/img_0/bank_s.donut"
+	.incbin "../obj/img_0/bank_s.donut"
 
 img_1_pal:
 	.include "../obj/img_1/pal.s"
@@ -57,49 +58,36 @@ img_1_attr:
 img_1_oam:
 	.include "../obj/img_1/oam.s"
 img_1_bank_0:
-	.incbin "obj/img_1/bank_0.donut"
+	.incbin "../obj/img_1/bank_0.donut"
 img_1_bank_1:
-	.incbin "obj/img_1/bank_1.donut"
+	.incbin "../obj/img_1/bank_1.donut"
 img_1_bank_2:
-	.incbin "obj/img_1/bank_2.donut"
+	.incbin "../obj/img_1/bank_2.donut"
 img_1_bank_s:
-	.incbin "obj/img_1/bank_s.donut"
+	.incbin "../obj/img_1/bank_s.donut"
+
 
 .segment "PRG1_8000"
-img_title_pal:
-	.include "../obj/img_title/pal.s"
-img_title_attr:
-	.incbin "../obj/img_title/attr.bin"
-img_title_oam:
-	.include "../obj/img_title/oam.s"
-img_title_bank_0:
-	.incbin "obj/img_title/bank_0.donut"
-img_title_bank_1:
-	.incbin "obj/img_title/bank_1.donut"
-img_title_bank_2:
-	.incbin "obj/img_title/bank_2.donut"
-img_title_bank_s:
-	.incbin "obj/img_title/bank_s.donut"
-
+.segment "PRG2_8000"
 
 .segment "PRGFIXED_C000"
 
 
 img_title:
-	.addr img_title_pal
-	.addr img_title_attr
+	.addr universal_pal
+	.addr img_title_nam
 	.addr img_title_oam
 	.addr img_title_bank_0
-	.addr img_title_bank_1
-	.addr img_title_bank_2
-	.addr img_title_bank_s
-	.byte <.bank(img_title_pal)
-	.byte <.bank(img_title_attr)
+	.addr img_title_bank_0
+	.addr img_title_bank_0
+	.addr img_title_bank_0
+	.byte <.bank(universal_pal)
+	.byte <.bank(img_title_nam)
 	.byte <.bank(img_title_oam)
 	.byte <.bank(img_title_bank_0)
-	.byte <.bank(img_title_bank_1)
-	.byte <.bank(img_title_bank_2)
-	.byte <.bank(img_title_bank_s)
+	.byte <.bank(img_title_bank_0)
+	.byte <.bank(img_title_bank_0)
+	.byte <.bank(universal_tileset)
 
 img_0:
 	.addr img_0_pal
@@ -139,6 +127,9 @@ img_table:
 img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
+titlescreen_sprite0_data:
+	.byte $70, $FF, $01, $29
+	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
 gallery_sprite0_data:
 	.byte $4E, $FF, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
@@ -298,7 +289,7 @@ loop2:
 	pha
 
 	;set up sprite zero in OAM shadow buffers
-	lda #$07
+	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
 	ldy #<gallery_sprite0_data_size
 	dey
@@ -308,7 +299,7 @@ loop2:
 	dey
 	bpl @copysprite0inoam1
 
-	lda #$06
+	lda #>OAM_SHADOW_2
 	sta shadow_oam_ptr+1
 	ldy #<loadscreen_sprite0_data_size
 	dey
@@ -320,7 +311,7 @@ loop2:
 	bpl @copysprite0inoam2
 
 	; switch to universal palette
-	a53_set_prg_safe #0
+	a53_set_prg_safe <.bank(universal_pal)
 	lda #<universal_pal
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
@@ -531,8 +522,6 @@ loop2:
 	ldy #0
 
 @loop:
-	; NMI interrupt check
-	; thanks Kasumi!
 	jsr sync_ppuaddr_ptr
 	lda (temp1_16),y
 	sta PPUDATA
@@ -544,6 +533,26 @@ loop2:
 	rts
 .endproc
 
+
+;;
+; decompresses and transfers nametable and attribute data to PPU
+; @param A base address of attribute table ($20, $24, $28, or $2C)
+; @param temp1_16 pointer to compressed attribute data
+; @param temp2_16 shadow pointer to PPUADDR
+.proc transfer_img_nam
+	bit PPUSTATUS
+	sta temp2_16+1
+	sta PPUADDR
+	ldy #0
+	sty temp2_16+0
+	sty PPUADDR
+	lda temp1_16+1
+	ldy temp1_16+0
+	ldx #16
+	jsr donut_block_ayx
+
+	rts
+.endproc
 ;;
 ; sets the nametable for gallery view
 ; @param A base address of nametable ($20, $24, $28, or $2C)
@@ -704,13 +713,6 @@ txt_NesDev_2023:
 ; @param temp1_8 nametable high byte scratch pointer
 .proc set_title_nametable
 	sta temp1_8
-	tax
-	lda #0
-	tay
-	jsr ppu_clear_nt
-
-	; todo: setup title card nametable
-	jsr load_titlescreen
 	
 	; set address to offset $026D
 	; draw option gallery text
@@ -788,7 +790,97 @@ txt_NesDev_2023:
 	rts
 .endproc
 
+;;
+; sets the nametable for the title screen
+; @param A base address of nametable ($20, $24, $28, or $2C)
 .proc load_titlescreen
+	sta temp2_8
+	lda #<img_title
+	ldx #>img_title
+	jsr load_ptr_temp1_16
+
+	ldy #0
+	sty img_progress
+	sty oam_size
+
+@ptr_load:
+	lda (temp1_16),y
+	sta img,y
+	iny
+	cpy #.sizeof(img_DATA_PTR)
+	bne @ptr_load
+	
+	; setup loading screen
+
+	; save current PRG and CHR bank
+	lda s_A53_PRG_BANK
+	pha
+	lda s_A53_CHR_BANK
+	pha
+
+
+	; set sprite0 pixel
+	lda #>OAM_SHADOW_2
+	sta shadow_oam_ptr+1
+	ldy #<titlescreen_sprite0_data_size
+	dey
+@copysprite0inoam2:
+	lda titlescreen_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	inc oam_size
+	dey
+	bpl @copysprite0inoam2
+
+	; transfer palettes, attributes, and OAM buffer
+	lda z:img+img_DATA_PTR::img_PAL_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_PAL_PTR
+	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
+	jsr load_ptr_temp1_16
+	jsr transfer_img_pal
+
+	; it says attribute, but really it points to nametable data
+	lda z:img+img_DATA_PTR::img_ATTR_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_ATTR_PTR
+	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
+	jsr load_ptr_temp1_16
+	lda temp2_8
+	jsr transfer_img_nam
+
+	lda z:img+img_DATA_PTR::img_OAM_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_OAM_PTR
+	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
+	jsr load_ptr_temp1_16
+	jsr transfer_img_oam
+
+	; transfer BG CHR bank
+	lda #3
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	lda z:img+img_DATA_PTR::img_BANK_0_LOC
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_BANK_0_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$00
+	jsr transfer_4k_chr
+
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+
+	pla
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
 
@@ -809,6 +901,7 @@ txt_NesDev_2023:
 
 ;;
 ; interrupt protection for PPU data. call before loading data to A/X/Y
+; thanks Kasumi!
 .proc sync_ppuaddr_ptr
 	bit sys_mode
 	bpl @skip_sync
@@ -830,6 +923,7 @@ txt_NesDev_2023:
 
 ;;
 ; interrupt protection for PPU data. call after storing to PPUDATA
+; thanks Kasumi!
 .proc inc_ppuaddr_ptr
 	inc temp2_16+0
 	bne @skip_inc
