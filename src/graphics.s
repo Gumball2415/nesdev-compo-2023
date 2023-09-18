@@ -28,7 +28,7 @@ universal_pal:
 	.byte $0f,$38,$31,$11
 	.byte $0f,$0f,$0f,$0f
 	.byte $0f,$0f,$0f,$0f
-	.byte $0f,$0f,$0f,$0f
+	.byte $0f,$13,$24,$30
 	.byte $0f,$0f,$0f,$0f
 	.byte $0f,$0f,$0f,$0f
 	.byte $0f,$0f,$0f,$0f
@@ -83,6 +83,24 @@ img_title_bank_s:
 
 
 .segment "PRGFIXED_C000"
+
+
+img_title:
+	.addr img_title_pal
+	.addr img_title_attr
+	.addr img_title_oam
+	.addr img_title_bank_0
+	.addr img_title_bank_1
+	.addr img_title_bank_2
+	.addr img_title_bank_s
+	.byte <.bank(img_title_pal)
+	.byte <.bank(img_title_attr)
+	.byte <.bank(img_title_oam)
+	.byte <.bank(img_title_bank_0)
+	.byte <.bank(img_title_bank_1)
+	.byte <.bank(img_title_bank_2)
+	.byte <.bank(img_title_bank_s)
+
 img_0:
 	.addr img_0_pal
 	.addr img_0_attr
@@ -115,26 +133,9 @@ img_1:
 	.byte <.bank(img_1_bank_2)
 	.byte <.bank(img_1_bank_s)
 
-img_title:
-	.addr img_title_pal
-	.addr img_title_attr
-	.addr img_title_oam
-	.addr img_title_bank_0
-	.addr img_title_bank_1
-	.addr img_title_bank_2
-	.addr img_title_bank_s
-	.byte <.bank(img_title_pal)
-	.byte <.bank(img_title_attr)
-	.byte <.bank(img_title_oam)
-	.byte <.bank(img_title_bank_0)
-	.byte <.bank(img_title_bank_1)
-	.byte <.bank(img_title_bank_2)
-	.byte <.bank(img_title_bank_s)
-
 img_table:
 	.addr img_0
 	.addr img_1
-	.addr img_title
 img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
@@ -297,6 +298,16 @@ loop2:
 	pha
 
 	;set up sprite zero in OAM shadow buffers
+	lda #$07
+	sta shadow_oam_ptr+1
+	ldy #<gallery_sprite0_data_size
+	dey
+@copysprite0inoam1:
+	lda gallery_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	dey
+	bpl @copysprite0inoam1
+
 	lda #$06
 	sta shadow_oam_ptr+1
 	ldy #<loadscreen_sprite0_data_size
@@ -307,16 +318,6 @@ loop2:
 	inc oam_size
 	dey
 	bpl @copysprite0inoam2
-
-	lda #$07
-	sta shadow_oam_ptr+1
-	ldy #<gallery_sprite0_data_size
-	dey
-@copysprite0inoam1:
-	lda gallery_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	dey
-	bpl @copysprite0inoam1
 
 	; switch to universal palette
 	a53_set_prg_safe #0
@@ -441,25 +442,57 @@ loop2:
 	pla
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
-
-	; let the NMI handler know that we're done transferring CHR
-	lda sys_mode
-	and #($FF - sys_MODE_CHRTRANSFER)
-	sta sys_mode
 	
 	rts
 .endproc
 
 ;;
-; decompresses and transfers palette data to shadow palette
+; fades and transfers palette data to shadow palette
 ; @param temp1_16 pointer to compressed palette data
-; @param pal_fade_dec increment steps to the palette
+; @param pal_fade_dec incremental steps to dim the palette. range is 0 to 4
 .proc transfer_img_pal
 	ldy #0
 
 @loop:
 	lda (temp1_16),y
+	sta temp1_8
 	ldx pal_fade_dec
+	beq @end_fade_loop
+
+@fade_loop:
+	lda temp1_8
+	cmp #$1D
+	beq @set_to_black
+
+	pha ; preserve later for high nybble
+	and #%00001111
+	cmp #$0E
+	bcc @skip_0E_0F_check
+
+	pla ; restore stack
+	jmp @set_to_black
+
+@skip_0E_0F_check:
+	sta temp1_8 ; preserve low nybble
+	pla ; process high nybble
+	and #%11110000
+	beq @set_to_black ; any color with $00 will be decremented to black
+
+	sec
+	sbc #$10
+	ora temp1_8
+	sta temp1_8
+	jmp @fade_tick
+	
+@set_to_black:
+	lda #$0F
+	sta temp1_8
+
+@fade_tick:
+	dex
+	bne @fade_loop
+
+@end_fade_loop:
 	sta shadow_palette,y
 	iny
 	cpy #32
@@ -677,6 +710,7 @@ txt_NesDev_2023:
 	jsr ppu_clear_nt
 
 	; todo: setup title card nametable
+	jsr load_titlescreen
 	
 	; set address to offset $026D
 	; draw option gallery text

@@ -206,18 +206,22 @@ program_table_hi:
 
 	inc nmis
 
-	; check if we're interrupting CHR transfer
+	; check if we're interrupting gallery CHR transfer
 	lda sys_mode
-	and #sys_MODE_CHRTRANSFER
+	and #sys_MODE_GALLERYLOAD
 	beq @not_chr_transfer
 
-	jsr chrtransfer_interrupt
+	jsr gallery_chr_transfer_interrupt
 	jmp @skip_update_graphics
 
 @not_chr_transfer:
 	jsr update_graphics
 
 @skip_update_graphics:
+	lda sys_mode
+	ora #sys_MODE_NMIOCCURRED
+	sta sys_mode
+
 	jsr read_pads
 	jsr run_music
 
@@ -229,13 +233,15 @@ program_table_hi:
 	rti
 .endproc
 
-.proc chrtransfer_interrupt
+.proc gallery_chr_transfer_interrupt
 	lda #$24
 	jsr update_progress_bar
 	; use shadow oam 2 for sprite 0 hit
 	lda #$06
 	sta shadow_oam_ptr+1
-	; overwrite PPUCTRL and s_A53_CHR_BANK
+	; overwrite s_A53_CHR_BANK
+	lda s_A53_CHR_BANK
+	pha
 	lda #3
 	sta s_A53_CHR_BANK
 	jsr update_graphics
@@ -250,7 +256,7 @@ program_table_hi:
 	bit PPUSTATUS
 	bvc @check_sprite0  ; spin on sprite 0 hit
 
-	; let update_graphics know that we have sprite0
+	; let the next update_graphics know that we have sprite0
 	lda sys_mode
 	ora #sys_MODE_SPRITE0SET
 	sta sys_mode
@@ -262,9 +268,6 @@ program_table_hi:
 	a53_set_chr s_A53_CHR_BANK
 	lda #$07
 	sta shadow_oam_ptr+1
-	lda sys_mode
-	ora #sys_MODE_NMIOCCURRED
-	sta sys_mode
 	bit PPUSTATUS
 	lda temp2_16+1
 	sta PPUADDR
@@ -326,7 +329,7 @@ program_table_hi:
 
 	; Set PRG and CHR bank
 	jsr init_action53
-	lda #3
+	lda #3 ; universal CHR bank
 	sta s_A53_CHR_BANK
 	a53_set_chr s_A53_CHR_BANK
 	lda #0
@@ -353,15 +356,13 @@ program_table_hi:
 	lda #$10
 	jsr transfer_4k_chr
 
-	a53_set_chr s_A53_CHR_BANK
-
 	; initialize NMI handler flags
 	lda sys_mode
 	ora #sys_MODE_NMIOAM|sys_MODE_NMIPAL
 	sta sys_mode
 
 	; enable NMI immediately
-	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
+	lda #VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 
@@ -371,12 +372,12 @@ program_table_hi:
 
 	; set system state to title screen
 	lda #STATE_ID::sys_TITLE
+	lda #STATE_ID::sys_GALLERY
 	sta sys_state
 
 	; start music with song id #0
-	lda #2
-	sta img_index
 	lda #1
+	sta img_index
 	jsr start_music
 	
 	jmp mainloop
@@ -410,7 +411,7 @@ program_table_hi:
 
 .proc title_subroutine
 	lda sys_mode
-	and #sys_MODE_CHRDONE
+	and #sys_MODE_INITDONE
 	bne @skip_init
 	; load screen, tileset, nametable, and palettes associated
 	jsr title_init
@@ -435,25 +436,24 @@ program_table_hi:
 
 	lda #$20
 	jsr set_title_nametable
-	
-	; let the system know we've already initialized the nametables
 
-	jsr load_titlescreen
-
-	; let the NMI handler know that we're done transferring CHR
+	; let the NMI handler know that we're done initializing
 	lda sys_mode
-	ora #sys_MODE_CHRDONE
+	ora #sys_MODE_INITDONE
 	sta sys_mode
 
 	; remove if the stuff up here enables NMI
-	lda s_PPUCTRL
+
+	; enable NMI immediately
+	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
+	sta s_PPUCTRL
 	rts
 .endproc 
 
 .proc gallery_subroutine
 	lda sys_mode
-	and #sys_MODE_CHRDONE
+	and #sys_MODE_INITDONE
 	bne @skip_init
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
@@ -480,7 +480,7 @@ program_table_hi:
 @img_index_epilogue:
 	; bug the system to transfer the new CHR
 	lda sys_mode
-	and #($FF - sys_MODE_CHRDONE)
+	and #($FF - sys_MODE_INITDONE)
 	sta sys_mode
 
 @skip:
@@ -530,6 +530,10 @@ gallery_right:
 	sta PPUMASK
 	sta PPUCTRL
 
+	lda #0
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+
 	lda #$20
 	jsr set_gallery_nametable
 
@@ -539,14 +543,23 @@ gallery_right:
 	; let the system know we've already initialized the nametables
 	; let the NMI handler know that we're transferring CHR
 	lda sys_mode
-	ora #sys_MODE_GALLERYINIT|sys_MODE_CHRTRANSFER
+	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD
 	sta sys_mode
 
 	jsr load_chr_bitmap
 
 	; let the NMI handler know that we're done transferring CHR
 	lda sys_mode
-	ora #sys_MODE_CHRDONE
+	and #($FF - sys_MODE_GALLERYLOAD)
+	sta sys_mode
+	
+	; setup PPUCTRL for gallery
+	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
+	sta s_PPUCTRL
+
+	; let the NMI handler know that we're done transferring CHR
+	lda sys_mode
+	ora #sys_MODE_INITDONE
 	sta sys_mode
 	rts
 .endproc
@@ -586,6 +599,8 @@ gallery_right:
 	jsr update_scrolling
 
 .if ::SKIP_DOT_DISABLE
+		; check if sprite 0 hit has already occured
+		; if not, skip the PPUADDR hack
 		lda sys_mode
 		and #sys_MODE_SPRITE0SET
 		beq @skip_xy_set
@@ -596,12 +611,12 @@ gallery_right:
 		lda #$00
 		sta PPUMASK
 		;  First    Second
-		; /======\ /=======\
-		; 00yyNNYY YYY XXXXX
-		;  ||||||| ||| +++++- coarse X scroll
-		;  |||||++-+++------- coarse Y scroll
-		;  |||++------------- nametable select
-		;  +++--------------- fine Y scroll
+		; /======\ /======\
+		; 00yyNNYY YYYXXXXX
+		;  ||||||| |||+++++- coarse X scroll
+		;  |||||++-+++------ coarse Y scroll
+		;  |||++------------ nametable select
+		;  +++-------------- fine Y scroll
 
 		; prepare first write
 		ldx ppu_scroll_y
@@ -646,7 +661,8 @@ gallery_right:
 		sta PPUADDR
 		lda temp2_8
 		sta PPUADDR
-		
+
+		; toggle sprite 0 flag occurence
 		lda sys_mode
 		and #($FF - sys_MODE_SPRITE0SET)
 		sta sys_mode
