@@ -5,22 +5,27 @@
 ; shadow regs for PPUCTRL, PPUMASK, PPUSCROLL
 ; and some extra variables for OAM and palettes
 ; 
-s_PPUCTRL:    .res 1
-s_PPUMASK:    .res 1
-ppu_scroll_x: .res 1
-ppu_scroll_y: .res 1
-oam_size:     .res 1
+s_PPUCTRL:      .res 1
+s_PPUMASK:      .res 1
+ppu_scroll_x:   .res 1
+ppu_scroll_y:   .res 1
+oam_size:       .res 1
 shadow_oam_ptr: .res 2
-shadow_palette: .res 32 ; we store in zeropage for speed
+; palette buffers, stored here for speed
+shadow_palette_primary: .res 32
 
 ; misc. stuff
-pal_fade_amt: .res 1
-pal_fade_ctr: .res 1
-pal_fade_int: .res 1
-fade_dir:     .res 1
-img_progress: .res 1
-img_index:    .res 1
-img:          .tag img_DATA_PTR
+shadow_pal_ptr: .res 2
+pal_fade_amt:   .res 1
+pal_fade_ctr:   .res 1
+pal_fade_int:   .res 1
+fade_dir:       .res 1
+img_progress:   .res 1
+img_index:      .res 1
+img:            .tag img_DATA_PTR
+
+.segment "STACKRAM"
+shadow_palette_secondary: .res 32
 
 
 .segment "PRG0_8000"
@@ -142,7 +147,6 @@ loadscreen_sprite0_data:
 
 ; copies the palette from shadow regs to PPU
 ; not interrupt safe!
-; @param pal_fade_amt incremental steps to dim the palette. range is 0 to 4
 .proc transfer_palette
 	bit PPUSTATUS
 	lda #$3F
@@ -150,30 +154,9 @@ loadscreen_sprite0_data:
 	lda #$00
 	sta PPUADDR
 	ldx #0
-	lda pal_fade_amt
-	and #%00000111
-	asl
-	asl
-	asl
-	asl
-	sta temp2_8
 
 @loop:
-	lda shadow_palette,x
-	ldy pal_fade_amt
-	beq @skip_fade
-	sec
-	sbc temp2_8
-	bmi @set_to_black
-	cmp #$0D
-	beq @set_to_black
-	
-	jmp @skip_fade
-	
-@set_to_black:
-	lda #$0F
-
-@skip_fade:
+	lda shadow_palette_primary,x
 	sta PPUDATA
 	inx
 	cpx #32
@@ -215,6 +198,80 @@ loadscreen_sprite0_data:
 	; fade complete, let NMI know about it
 	lda sys_mode
 	and #($FF - sys_MODE_PALETTEFADE)
+	sta sys_mode
+	rts
+.endproc
+
+;;
+; @param pal_fade_amt incremental steps to dim the palette. range is 0 to 4
+; @param temp1_8, temp2_8 scratch bytes
+.proc fade_shadow_palette
+	lda pal_fade_amt
+	and #%00000111
+	cmp #5
+	bcc @shift_fade_amt
+	lda #4
+@shift_fade_amt:
+	asl
+	asl
+	asl
+	asl
+	sta temp1_8
+	ldx #0
+
+@loop:
+	lda shadow_palette_secondary,x
+	ldy pal_fade_amt
+	beq @write_entry
+	sta temp2_8
+	; shift brightness
+	and #$F0
+	beq @set_to_black ; column 0 gets set to black after 1 step
+	sec
+	sbc temp1_8
+	bmi @set_to_black
+	tay
+
+	; shift hue
+	lda temp2_8
+	and #$0F
+	beq @gray_color ; check for gray colors
+	cmp #$0D
+	bcs @gray_color
+	sec
+	sbc pal_fade_amt
+	sta temp2_8
+	; check color $x0
+	beq @color_x0_underflow
+	bpl @recombine
+	jmp @wrap_hue
+
+@color_x0_underflow:
+	sbc #1
+@wrap_hue:
+	sbc #3
+	adc #16
+	sta temp2_8
+
+@recombine:
+	; combine brightness and hue nybbles
+	tya
+	ora temp2_8
+	jmp @write_entry
+
+@gray_color:
+	tya
+	jmp @write_entry
+
+@set_to_black:
+	lda #$0F
+
+@write_entry:
+	sta shadow_palette_primary,x
+	inx
+	cpx #32
+	bne @loop
+
 	rts
 .endproc
 
@@ -499,14 +556,14 @@ loop2:
 .endproc
 
 ;;
-; fades and transfers palette data to shadow palette
-; @param temp1_16 pointer to compressed palette data
+; transfers palette data to shadow_pal_ptr
+; @param temp1_16 pointer to palette data
 .proc transfer_img_pal
 	ldy #0
 
 @loop:
 	lda (temp1_16),y
-	sta shadow_palette,y
+	sta shadow_palette_secondary,y
 	iny
 	cpy #32
 	bne @loop
@@ -516,7 +573,7 @@ loop2:
 
 ;;
 ; decompresses and transfers metasprite data to shadow OAM
-; @param temp1_16 pointer to compressed palette data
+; @param temp1_16 pointer to OAM data
 .proc transfer_img_oam
 	ldy oam_size
 

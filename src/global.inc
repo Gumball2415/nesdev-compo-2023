@@ -30,7 +30,7 @@
 .global read_pads
 
 ; graphics.s
-.global set_title_nametable, load_titlescreen, run_fade
+.global set_title_nametable, load_titlescreen, run_fade, fade_shadow_palette
 .global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr
 .global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .global set_gallery_nametable, set_gallery_loading_screen, transfer_img_pal
@@ -41,7 +41,8 @@
 .globalzp pal_fade_ctr
 .globalzp pal_fade_amt
 .globalzp fade_dir
-.globalzp shadow_palette
+.globalzp shadow_palette_primary
+.globalzp shadow_palette_secondary
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK
 .globalzp ppu_scroll_x

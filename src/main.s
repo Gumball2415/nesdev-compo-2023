@@ -336,6 +336,17 @@ program_table_hi:
 	inx
 	bne @clrmem
 
+	; initialize shadow palette
+	ldy #0
+	lda #$0F
+
+@clrshadowpal:
+	sta shadow_palette_primary,y
+	sta shadow_palette_secondary,y
+	iny
+	cpy #32
+	bne @clrshadowpal
+
 	; set shadow OAM page
 	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
@@ -351,13 +362,7 @@ program_table_hi:
 @vblankwait2:
 	bit PPUSTATUS
 	bpl @vblankwait2
-	
-	; load universal tileset and palette
-	lda #<universal_pal
-	ldx #>universal_pal
-	jsr load_ptr_temp1_16
-	jsr transfer_img_pal
-	
+
 	; as we are in vblank, transfer palettes so that we don't linger on a dead screen
 	jsr transfer_palette
 
@@ -368,11 +373,6 @@ program_table_hi:
 	jsr load_ptr_temp1_16
 	lda #$10
 	jsr transfer_4k_chr
-
-	; initialize NMI handler flags
-	lda sys_mode
-	ora #sys_MODE_NMIOAM|sys_MODE_NMIPAL
-	sta sys_mode
 
 	; enable NMI immediately
 	lda #VBLANK_NMI
@@ -401,12 +401,23 @@ program_table_hi:
 .endproc
 
 .proc mainloop
+	; run fade algorithm
+	lda #sys_MODE_PALETTEFADE
+	bit sys_mode
+	beq @skip_palettefade
+
+	; force palette update when fading
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+	jsr fade_shadow_palette
+
+@skip_palettefade:
 	; run the machine
 	jsr run_state_machine
-
+	; done, wait for NMI
 	ldx #1
 	jsr wait_x_frames
-
 	jmp mainloop
 .endproc
 
@@ -439,7 +450,6 @@ program_table_hi:
 	; run logic
 	; todo:  refer to "docs/state machine diagram or whatevs.png"
 
-	
 	; display raster title image
 	jsr title_display_kernel_ntsc
 	rts
@@ -458,8 +468,9 @@ program_table_hi:
 
 	; let the NMI handler know that we're done initializing
 	; let the NMI handler know that we're fading in
+	; let the NMI handler enable OAM and palette
 	lda sys_mode
-	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE
+	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE|sys_MODE_NMIOAM|sys_MODE_NMIPAL
 	sta sys_mode
 	
 	; fade in
@@ -566,7 +577,7 @@ gallery_right:
 	; let the system know we've already initialized the nametables
 	; let the NMI handler know that we're transferring CHR
 	lda sys_mode
-	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD
+	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD|sys_MODE_NMIOAM|sys_MODE_NMIPAL
 	sta sys_mode
 
 	jsr load_chr_bitmap

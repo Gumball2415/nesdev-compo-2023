@@ -27,9 +27,9 @@
 .import sync_ppuaddr_ptr
 .import inc_ppuaddr_ptr
 
-
-donut_block_buffer = $0100  ; 64 bytes
-
+.segment "STACKRAM"
+donut_buffer: .res 64  ; 64 bytes
+donut_block_buffer = donut_buffer - 64
 .segment "ZEROPAGE"
 donut_stream_ptr:       .res 2
 donut_block_count:      .res 1
