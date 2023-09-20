@@ -136,8 +136,11 @@ img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
 titlescreen_sprite0_data:
-	.byte $70, $FF, $01, $29
+	.byte $77, $FF, $01, $29 ; sprite 0
 	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
+titlescreen_sprite1_data:
+	.byte $98, $04, $00, $58 ; star sprite
+	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
 gallery_sprite0_data:
 	.byte $4E, $FF, $00, $F8
 	gallery_sprite0_data_size := * - gallery_sprite0_data
@@ -180,7 +183,7 @@ loadscreen_sprite0_data:
 	lda fade_dir
 	bpl @increment
 	lda pal_fade_amt
-	cmp #4
+	cmp #fade_amt_max
 	beq @return
 	inc pal_fade_amt
 	jmp @end
@@ -208,9 +211,9 @@ loadscreen_sprite0_data:
 .proc fade_shadow_palette
 	lda pal_fade_amt
 	and #%00000111
-	cmp #5
+	cmp #fade_amt_max+1
 	bcc @shift_fade_amt
-	lda #4
+	lda #fade_amt_max
 @shift_fade_amt:
 	asl
 	asl
@@ -434,8 +437,19 @@ loop2:
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
 	jsr transfer_img_pal
+
+	; override fade
+	lda pal_fade_amt
+	pha
+	lda #0
+	sta pal_fade_amt
+	jsr fade_shadow_palette
+	pla
+	sta pal_fade_amt
+
+	; bug NMI to load sprite0 and load screen palette
 	lda sys_mode
-	ora #sys_MODE_NMIPAL
+	ora #sys_MODE_NMIPAL|sys_MODE_NMIOAM
 	sta sys_mode
 
 	; setup loading screen NMI
@@ -539,9 +553,15 @@ loop2:
 	lda #$10
 	jsr transfer_4k_chr
 
+
+	; done with CHR transfer, begin to restore state
+
+	; bug system to load in new palettes
 	lda sys_mode
 	ora #sys_MODE_NMIPAL
 	sta sys_mode
+
+	jsr fade_shadow_palette
 
 	pla
 	sta s_PPUCTRL
@@ -551,7 +571,7 @@ loop2:
 	pla
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
-	
+
 	rts
 .endproc
 
@@ -582,6 +602,43 @@ loop2:
 	sta (shadow_oam_ptr),y
 	iny
 	bne @loop
+	sty oam_size
+
+	rts
+.endproc
+
+;;
+; decompresses and transfers metasprite data to shadow OAM
+; @param temp1_16 pointer to OAM data
+; @param X size of sprite data
+.proc transfer_sprite
+	; preserve shadow OAM pointer
+	lda shadow_oam_ptr+0
+	pha
+	lda shadow_oam_ptr+1
+	pha
+
+	clc
+	lda oam_size
+	adc shadow_oam_ptr+0
+	sta shadow_oam_ptr+0
+	lda #0
+	adc shadow_oam_ptr+1
+	sta shadow_oam_ptr+1
+	ldy #0
+
+@loop:
+	lda (temp1_16),y
+	sta (shadow_oam_ptr),y
+	iny
+	inc oam_size
+	dex
+	bne @loop
+	
+	pla
+	sta shadow_oam_ptr+1
+	pla
+	sta shadow_oam_ptr+0
 
 	rts
 .endproc
@@ -887,14 +944,18 @@ txt_NesDev_2023:
 	; set sprite0 pixel
 	lda #>OAM_SHADOW_2
 	sta shadow_oam_ptr+1
-	ldy #<titlescreen_sprite0_data_size
-	dey
-@copysprite0inoam2:
-	lda titlescreen_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	inc oam_size
-	dey
-	bpl @copysprite0inoam2
+	lda #<titlescreen_sprite0_data
+	ldx #>titlescreen_sprite0_data
+	jsr load_ptr_temp1_16
+	ldx #<titlescreen_sprite0_data_size
+	jsr transfer_sprite
+
+	; set star sprite
+	lda #<titlescreen_sprite1_data
+	ldx #>titlescreen_sprite1_data
+	jsr load_ptr_temp1_16
+	ldx #<titlescreen_sprite1_data_size
+	jsr transfer_sprite
 
 	; transfer palettes, attributes, and OAM buffer
 	lda z:img+img_DATA_PTR::img_PAL_LOC
@@ -915,6 +976,7 @@ txt_NesDev_2023:
 	lda temp2_8
 	jsr transfer_img_nam
 
+	; no OAM afaik?
 	lda z:img+img_DATA_PTR::img_OAM_LOC
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK

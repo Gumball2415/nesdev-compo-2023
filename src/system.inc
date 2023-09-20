@@ -13,6 +13,11 @@
 OAM_SHADOW_1 = $0700
 OAM_SHADOW_2 = $0600
 
+fade_dir_in = $01
+fade_dir_stop = $00
+fade_dir_out = $FF
+fade_amt_max = 4
+
 sys_MODE_GALLERYLOAD = %00000001
 sys_MODE_INITDONE    = %00000010
 sys_MODE_GALLERYINIT = %00000100

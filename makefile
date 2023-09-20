@@ -13,7 +13,7 @@
 # These are used in the title of the NES program and the zip file.
 filetitle = $(title)-$(version)
 title = nesdev-compo-2023
-version = 0.0.0
+version = 0.0.1
 
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
@@ -120,6 +120,11 @@ $(objdir)/%.o: $(objdir)/%.s
 
 # Files that depend on .incbin'd files
 
+# this area is unused, better fill it with something anyway
+$(objdir)/header.o: $(objdir)/2A03_MEMORY_DUMP_TRACKED_DATA
+$(objdir)/2A03_MEMORY_DUMP_TRACKED_DATA: $(srcdir)/2A03_MEMORY_DUMP_TRACKED_DATA
+	cp $< $@
+
 $(objdir)/music.o: $(objdir)/music.asm
 
 $(objdir)/graphics.o: \
@@ -135,7 +140,7 @@ $(objdir)/graphics.o: \
 
 # Rules for Dn-FT exports
 
-$(objdir)/music.asm: $(musdir)/music.asm 
+$(objdir)/music.asm: $(musdir)/music.asm
 	cp $< $@
 
 

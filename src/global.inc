@@ -42,7 +42,7 @@
 .globalzp pal_fade_amt
 .globalzp fade_dir
 .globalzp shadow_palette_primary
-.globalzp shadow_palette_secondary
+.global shadow_palette_secondary
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK
 .globalzp ppu_scroll_x

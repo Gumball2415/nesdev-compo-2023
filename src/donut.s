@@ -28,7 +28,8 @@
 .import inc_ppuaddr_ptr
 
 .segment "STACKRAM"
-donut_buffer: .res 64  ; 64 bytes
+donut_buffer: .res 64
+;for some weird reason it actually uses the space 64 bytes away
 donut_block_buffer = donut_buffer - 64
 .segment "ZEROPAGE"
 donut_stream_ptr:       .res 2

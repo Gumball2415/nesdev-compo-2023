@@ -59,7 +59,7 @@ sys_mode:       .res 1
 
 
 .segment "UNUSED"
-.res 42,0
+	.incbin "../obj/2A03_MEMORY_DUMP_TRACKED_DATA"
 
 .segment "VECTORS"
 .addr nmi_handler, reset_handler, irq_handler

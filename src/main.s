@@ -7,9 +7,10 @@
 SKIP_DOT_DISABLE = 1
 
 .segment "ZEROPAGE"
-nmis:           .res 1
-cur_keys:       .res 2
-new_keys:       .res 2
+nmis:        .res 1
+cur_keys:    .res 2
+new_keys:    .res 2
+mode_select: .res 1
 
 .segment "PRGFIXED_C000"
 
@@ -177,7 +178,7 @@ jump_table_hi:
 	bit PPUSTATUS
 	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
 	dec s_A53_MUTEX
-	lda #NT_2000|OBJ_8X16|BG_1000|VBLANK_NMI
+	lda #NT_2000|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 
 	; let update_graphics know that we have sprite0
@@ -198,6 +199,10 @@ program_table_hi:
 	.byte .hibyte(title_subroutine)
 	.byte .hibyte(gallery_subroutine)
 	.byte .hibyte(credits_subroutine)
+
+title_select:
+	.byte STATE_ID::sys_GALLERY
+	.byte STATE_ID::sys_CREDITS
 
 .proc nmi_handler
 	pha
@@ -235,7 +240,6 @@ program_table_hi:
 	ora #sys_MODE_NMIOCCURRED
 	sta sys_mode
 
-	jsr read_pads
 	jsr run_music
 
 	pla
@@ -391,12 +395,6 @@ program_table_hi:
 	lda #1
 	jsr start_music
 	
-	; init fade
-	lda #4
-	sta pal_fade_amt
-	sta pal_fade_int
-	sta pal_fade_ctr
-	
 	jmp mainloop
 .endproc
 
@@ -413,6 +411,8 @@ program_table_hi:
 	jsr fade_shadow_palette
 
 @skip_palettefade:
+	; read input
+	jsr read_pads
 	; run the machine
 	jsr run_state_machine
 	; done, wait for NMI
@@ -447,9 +447,60 @@ program_table_hi:
 
 
 @skip_init:
+	; if palette fading is in progress, skip all logic and continue raster display
+	lda #sys_MODE_PALETTEFADE
+	bit sys_mode
+	bne @check_fade_dir
+
 	; run logic
 	; todo:  refer to "docs/state machine diagram or whatevs.png"
+	lda #KEY_UP|KEY_DOWN|KEY_SELECT
+	bit new_keys
+	bne @toggle_select
 
+@check_start:
+	lda #KEY_START
+	bit new_keys
+	bne @start_selected
+	jmp @skip
+
+@toggle_select:
+	lda mode_select
+	eor #%00000001
+	sta mode_select
+
+	; important: sprite1 is star sprite!
+	ldy #4
+	lda (shadow_oam_ptr),y
+	eor #%00110000
+	sta (shadow_oam_ptr),y
+
+	jmp @skip
+
+@start_selected:
+	lda #fade_dir_out
+	sta fade_dir
+	lda sys_mode
+	ora #sys_MODE_PALETTEFADE
+	sta sys_mode
+	jmp @skip
+
+@check_fade_dir:
+	lda fade_dir
+	bpl @skip ; do nothing else on fade in
+	lda pal_fade_amt
+	cmp #fade_amt_max
+	bne @skip
+
+	; after fade out is done, bug the system to transfer to gallery state
+	ldx mode_select
+	lda title_select,x
+	sta sys_state
+	lda sys_mode
+	and #($FF - sys_MODE_INITDONE)
+	sta sys_mode
+
+@skip:
 	; display raster title image
 	jsr title_display_kernel_ntsc
 	rts
@@ -472,22 +523,31 @@ program_table_hi:
 	lda sys_mode
 	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE|sys_MODE_NMIOAM|sys_MODE_NMIPAL
 	sta sys_mode
-	
+
+	; init fade
+	lda #fade_amt_max
+	sta pal_fade_amt
+
 	; fade in
-	lda #$01
+	lda #fade_dir_in
 	sta fade_dir
+
+	; slow fade speed
+	lda #4
+	sta pal_fade_int
+	sta pal_fade_ctr
 
 	; remove if the stuff up here enables NMI
 	; enable NMI immediately
-	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
+	lda #NT_2000|OBJ_1000|BG_0000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 	rts
 .endproc 
 
 .proc gallery_subroutine
-	lda sys_mode
-	and #sys_MODE_INITDONE
+	lda #sys_MODE_INITDONE
+	bit sys_mode
 	bne @skip_init
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
@@ -496,23 +556,45 @@ program_table_hi:
 
 
 @skip_init:
+	; if palette fading is in progress, skip all logic and continue raster display
+	lda #sys_MODE_PALETTEFADE
+	bit sys_mode
+	bne @check_fade_dir
+
 	; run logic
 	; todo:  refer to "docs/state machine diagram or whatevs.png"
-	lda cur_keys
-	and #KEY_LEFT
+	lda #KEY_LEFT
+	bit new_keys
 	beq @check_right
 
 	jsr gallery_left
 	jmp @img_index_epilogue
 
 @check_right:
-	lda cur_keys
-	and #KEY_RIGHT
+	lda #KEY_RIGHT
+	bit new_keys
 	beq @skip
 	jsr gallery_right
 
 @img_index_epilogue:
+	; fade out
+	lda #fade_dir_out
+	sta fade_dir
+
 	; bug the system to transfer the new CHR
+	; bug the system to do fade out
+	lda sys_mode
+	ora #sys_MODE_PALETTEFADE
+	sta sys_mode
+	jmp @skip
+
+@check_fade_dir:
+	lda fade_dir
+	bpl @skip ; do nothing else on fade in
+	lda pal_fade_amt
+	cmp #fade_amt_max
+	bne @skip ; after fade out is done, bug the system to transfer the new CHR
+	
 	lda sys_mode
 	and #($FF - sys_MODE_INITDONE)
 	sta sys_mode
@@ -576,25 +658,39 @@ gallery_right:
 	
 	; let the system know we've already initialized the nametables
 	; let the NMI handler know that we're transferring CHR
+	; enable OAM transfer for sprite 0
 	lda sys_mode
-	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD|sys_MODE_NMIOAM|sys_MODE_NMIPAL
+	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD
 	sta sys_mode
+	
+	; init fade here, so that the first frame doesn't flash
+	lda #fade_amt_max
+	sta pal_fade_amt
 
+	; this is a special routine
+	; it has to load chr while NMI is enabled
 	jsr load_chr_bitmap
 
+	; let the NMI handler know that we're done loading the current gallery image
 	; let the NMI handler know that we're done transferring CHR
+	; let the NMI handler know that we're fading in
 	lda sys_mode
 	and #($FF - sys_MODE_GALLERYLOAD)
+	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE
 	sta sys_mode
+
+	; set fade direction
+	lda #fade_dir_in
+	sta fade_dir
+
+	; fast fade speed
+	lda #2
+	sta pal_fade_int
+	sta pal_fade_ctr
 	
 	; setup PPUCTRL for gallery
 	lda #NT_2000|OBJ_8X16|BG_0000|VBLANK_NMI
 	sta s_PPUCTRL
-
-	; let the NMI handler know that we're done transferring CHR
-	lda sys_mode
-	ora #sys_MODE_INITDONE
-	sta sys_mode
 	rts
 .endproc
 
