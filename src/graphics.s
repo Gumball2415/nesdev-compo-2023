@@ -233,18 +233,18 @@ loadscreen_sprite0_data:
 	sec
 	sbc temp1_8
 	bmi @set_to_black
-	tay
+	tay ; brightness nybble is stored in Y
 
 	; shift hue
 	lda temp2_8
 	and #$0F
-	beq @gray_color ; check for gray colors
+	beq @x0_color ; check for gray colors
 	cmp #$0D
-	bcs @gray_color
+	bcs @xD_xF_color
 	sec
 	sbc pal_fade_amt
-	sta temp2_8
-	; check color $x0
+	sta temp2_8 ; hue nybble is stored in temp2_8
+	; check color underflow
 	beq @color_x0_underflow
 	bpl @recombine
 	jmp @wrap_hue
@@ -255,6 +255,7 @@ loadscreen_sprite0_data:
 	sbc #3
 	adc #16
 	sta temp2_8
+	; fall through
 
 @recombine:
 	; combine brightness and hue nybbles
@@ -262,9 +263,20 @@ loadscreen_sprite0_data:
 	ora temp2_8
 	jmp @write_entry
 
-@gray_color:
+@x0_color:
 	tya
 	jmp @write_entry
+
+@xD_xF_color:
+	cmp #$0D
+	bne @set_to_black ; $xE/$xF colors are transmuted to $0F
+	sta temp2_8
+	cpy #$10
+	; $0D/$1D is converted to $0F to avoid issues
+	beq @set_to_black
+	bmi @set_to_black
+	; else, continue with entry write
+	jmp @recombine
 
 @set_to_black:
 	lda #$0F

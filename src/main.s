@@ -240,8 +240,6 @@ title_select:
 	ora #sys_MODE_NMIOCCURRED
 	sta sys_mode
 
-	jsr run_music
-
 	pla
 	tax
 	pla
@@ -290,6 +288,9 @@ title_select:
 	sta PPUADDR
 	lda temp2_16+0
 	sta PPUADDR
+	
+	; since we are interrupting mainloop, run music here too
+	jsr run_music
 	rts
 .endproc
 
@@ -334,8 +335,8 @@ title_select:
 	sta $500,x
 	; clear shadow OAM 1 and 2
 	lda #$FF
-	sta $0700,x
-	sta $0600,x
+	sta OAM_SHADOW_1,x
+	sta OAM_SHADOW_2,x
 	lda #0
 	inx
 	bne @clrmem
@@ -399,6 +400,8 @@ title_select:
 .endproc
 
 .proc mainloop
+	; read input
+	jsr read_pads
 	; run fade algorithm
 	lda #sys_MODE_PALETTEFADE
 	bit sys_mode
@@ -411,10 +414,11 @@ title_select:
 	jsr fade_shadow_palette
 
 @skip_palettefade:
-	; read input
-	jsr read_pads
 	; run the machine
 	jsr run_state_machine
+	; run music
+	; we do it here to ensure that sprite0 wait will not crash
+	jsr run_music
 	; done, wait for NMI
 	ldx #1
 	jsr wait_x_frames
@@ -499,6 +503,17 @@ title_select:
 	lda sys_mode
 	and #($FF - sys_MODE_INITDONE)
 	sta sys_mode
+	
+	; clear OAM
+	lda #$FF
+	ldx #0
+@clear_OAM:
+	sta OAM_SHADOW_1,x
+	sta OAM_SHADOW_2,x
+	inx
+	bne @clear_OAM
+	lda #0
+	jsr start_music
 
 @skip:
 	; display raster title image
