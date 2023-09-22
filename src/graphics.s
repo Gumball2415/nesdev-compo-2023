@@ -136,7 +136,7 @@ img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
 titlescreen_sprite0_data:
-	.byte $77, $FF, $01, $29 ; sprite 0
+	.byte $76, $FF, $01, $E3 ; sprite 0
 	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
 titlescreen_sprite1_data:
 	.byte $98, $04, $00, $58 ; star sprite
@@ -573,6 +573,10 @@ loop2:
 	ora #sys_MODE_NMIPAL
 	sta sys_mode
 
+	; wait until vblank to restore stateg
+	ldx #1
+	jsr wait_x_frames
+
 	jsr fade_shadow_palette
 
 	pla
@@ -892,12 +896,12 @@ txt_NesDev_2023:
 	sta temp2_8
 	jsr draw_text
 	
-	; set address to offset $032F
+	; set address to offset $0342
 	; draw shvtera text
 	inc temp1_8
 	lda temp1_8
 	sta PPUADDR
-	lda #$2F
+	lda #$42
 	sta PPUADDR
 
 	lda #<txt_shvtera_group

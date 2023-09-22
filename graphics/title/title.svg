@@ -28,9 +28,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="true"
-     inkscape:zoom="3.1251123"
-     inkscape:cx="146.23474"
-     inkscape:cy="103.67627"
+     inkscape:zoom="4.4195762"
+     inkscape:cx="125.57765"
+     inkscape:cy="67.201014"
      inkscape:window-width="1920"
      inkscape:window-height="1057"
      inkscape:window-x="-8"
@@ -98,6 +98,53 @@
        x2="62.944031"
        y2="33.866665"
        gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient7688">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop7680" />
+      <stop
+         style="stop-color:#e771ff;stop-opacity:1;"
+         offset="0.33000001"
+         id="stop7682" />
+      <stop
+         style="stop-color:#681fce;stop-opacity:1;"
+         offset="0.66000003"
+         id="stop7684" />
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="1"
+         id="stop7686" />
+    </linearGradient>
+    <rect
+       x="102.27225"
+       y="38.917759"
+       width="345.07513"
+       height="114.50575"
+       id="rect236-9" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient7688"
+       id="linearGradient11770"
+       x1="200.89415"
+       y1="85.043983"
+       x2="200.89415"
+       y2="119.46602"
+       gradientUnits="userSpaceOnUse" />
+    <rect
+       x="102.27225"
+       y="38.917759"
+       width="345.07513"
+       height="114.50575"
+       id="rect12662" />
+    <rect
+       x="102.27225"
+       y="38.917759"
+       width="345.07513"
+       height="114.50575"
+       id="rect13902" />
   </defs>
   <g
      inkscape:label="Layer 1"
@@ -110,7 +157,8 @@
        height="63.5"
        x="-67.73333"
        y="0"
-       transform="scale(-1,1)" />
+       transform="scale(-1,1)"
+       sodipodi:insensitive="true" />
     <rect
        style="display:none;mix-blend-mode:normal;fill:url(#linearGradient4721);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.402791;stroke-linecap:round;stroke-linejoin:round;paint-order:markers stroke fill"
        id="rect4681"
@@ -122,22 +170,36 @@
        ry="0" />
     <text
        xml:space="preserve"
-       transform="matrix(0.36894968,0,0,0.36894968,-67.769242,-9.8102844)"
+       transform="matrix(0.36894968,0,0,0.36894968,-67.769833,-10.210284)"
        id="text234"
-       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;mix-blend-mode:screen;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.00208;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:40px;line-height:1;font-family:'Sulphur Point';-inkscape-font-specification:'Sulphur Point Light';letter-spacing:1px;white-space:pre;shape-inside:url(#rect236);display:inline;mix-blend-mode:normal;fill:url(#linearGradient11770);fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.00208;stroke-linecap:square;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
        x="144.48001"
        y="0"><tspan
-         x="201.80957"
+         x="201.81596"
          y="70.949219"
-         id="tspan981"><tspan
+         id="tspan1196"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan979">project
+           id="tspan1184">pr</tspan><tspan
+           dx="-1.07249"
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;letter-spacing:2.07249px"
+           id="tspan1186">o</tspan><tspan
+           dx="4.1449766"
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;letter-spacing:-2.07249px"
+           id="tspan1188">j</tspan><tspan
+           dx="-3.9872169"
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;letter-spacing:1.91473px"
+           id="tspan1190">e</tspan><tspan
+           dx="-0.15776372"
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;letter-spacing:2.07249px"
+           id="tspan1192">c</tspan><tspan
+           dx="1.0724945"
+           style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
+           id="tspan1194">t
 </tspan></tspan><tspan
          x="201.80957"
          y="111.38047"
-         id="tspan985"><tspan
+         id="tspan1200"><tspan
            style="font-weight:normal;font-family:MingLiU-ExtB;-inkscape-font-specification:MingLiU-ExtB;text-align:center;text-anchor:middle;fill-rule:nonzero"
-           id="tspan983">SHVTERA
-</tspan></tspan></text>
+           id="tspan1198">SHVTERA</tspan></tspan></text>
   </g>
 </svg>
