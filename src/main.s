@@ -213,8 +213,8 @@ title_select:
 
 	inc nmis
 
-	lda #sys_MODE_PALETTEFADE
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_PALETTEFADE
 	beq @skip_palettefade
 	; force palette update when fading
 	lda sys_mode
@@ -225,8 +225,8 @@ title_select:
 
 	; check if we're interrupting gallery CHR transfer
 @skip_palettefade:
-	lda #sys_MODE_GALLERYLOAD
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_GALLERYLOAD
 	beq @skip_galleryload
 
 	jsr gallery_chr_transfer_interrupt
@@ -402,9 +402,13 @@ title_select:
 .proc mainloop
 	; read input
 	jsr read_pads
+	; run music
+	jsr run_music
+	; run the machine
+	jsr run_state_machine
 	; run fade algorithm
-	lda #sys_MODE_PALETTEFADE
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_PALETTEFADE
 	beq @skip_palettefade
 
 	; force palette update when fading
@@ -414,11 +418,6 @@ title_select:
 	jsr fade_shadow_palette
 
 @skip_palettefade:
-	; run the machine
-	jsr run_state_machine
-	; run music
-	; we do it here to ensure that sprite0 wait will not crash
-	jsr run_music
 	; done, wait for NMI
 	ldx #1
 	jsr wait_x_frames
@@ -452,8 +451,8 @@ title_select:
 
 @skip_init:
 	; if palette fading is in progress, skip all logic and continue raster display
-	lda #sys_MODE_PALETTEFADE
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_PALETTEFADE
 	bne @check_fade_dir
 
 	; run logic
@@ -474,6 +473,7 @@ title_select:
 	sta mode_select
 
 	; important: sprite1 is star sprite!
+	; toggle sprite1 y coordinate between $98 and $A8
 	ldy #4
 	lda (shadow_oam_ptr),y
 	eor #%00110000
@@ -561,8 +561,8 @@ title_select:
 .endproc 
 
 .proc gallery_subroutine
-	lda #sys_MODE_INITDONE
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_INITDONE
 	bne @skip_init
 	; load screen, tileset, nametable, and palettes associated
 	jsr gallery_init
@@ -572,8 +572,8 @@ title_select:
 
 @skip_init:
 	; if palette fading is in progress, skip all logic and continue raster display
-	lda #sys_MODE_PALETTEFADE
-	bit sys_mode
+	lda sys_mode
+	and #sys_MODE_PALETTEFADE
 	bne @check_fade_dir
 
 	; run logic
@@ -747,9 +747,8 @@ gallery_right:
 .if ::SKIP_DOT_DISABLE
 		; check if sprite 0 hit has already occured
 		; if not, skip the PPUADDR hack
-		lda sys_mode
-		and #sys_MODE_SPRITE0SET
-		beq @skip_xy_set
+		bit sys_mode ; sys_MODE_SPRITE0SET
+		bvc @skip_xy_set
 	@wait_vblank_end:
 		bit PPUSTATUS
 		bvs @wait_vblank_end

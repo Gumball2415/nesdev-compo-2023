@@ -573,7 +573,7 @@ loop2:
 	ora #sys_MODE_NMIPAL
 	sta sys_mode
 
-	; wait until vblank to restore stateg
+	; wait until vblank to restore state
 	ldx #1
 	jsr wait_x_frames
 
