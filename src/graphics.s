@@ -42,45 +42,9 @@ img_title_oam:
 img_title_bank_0:
 	.incbin "../obj/img_title/bank_0.donut"
 
-
-; TODO: these labeled includes could be generated on compile time
-img_0_pal:
-	.include "../obj/img_0/pal.s"
-img_0_attr:
-	.incbin "../obj/img_0/attr.bin"
-img_0_oam:
-	.include "../obj/img_0/oam.s"
-img_0_bank_0:
-	.incbin "../obj/img_0/bank_0.donut" 
-img_0_bank_1:
-	.incbin "../obj/img_0/bank_1.donut"
-img_0_bank_2:
-	.incbin "../obj/img_0/bank_2.donut"
-img_0_bank_s:
-	.incbin "../obj/img_0/bank_s.donut"
-
-img_1_pal:
-	.include "../obj/img_1/pal.s"
-img_1_attr:
-	.incbin "../obj/img_1/attr.bin"
-img_1_oam:
-	.include "../obj/img_1/oam.s"
-img_1_bank_0:
-	.incbin "../obj/img_1/bank_0.donut"
-img_1_bank_1:
-	.incbin "../obj/img_1/bank_1.donut"
-img_1_bank_2:
-	.incbin "../obj/img_1/bank_2.donut"
-img_1_bank_s:
-	.incbin "../obj/img_1/bank_s.donut"
-
-
-.segment "PRG1_8000"
-.segment "PRG2_8000"
+.include "../obj/img_index.s"
 
 .segment "PRGFIXED_C000"
-
-
 img_title:
 	.addr universal_pal
 	.addr img_title_nam
@@ -96,43 +60,6 @@ img_title:
 	.byte <.bank(img_title_bank_0)
 	.byte <.bank(img_title_bank_0)
 	.byte <.bank(universal_tileset)
-
-img_0:
-	.addr img_0_pal
-	.addr img_0_attr
-	.addr img_0_oam
-	.addr img_0_bank_0
-	.addr img_0_bank_1
-	.addr img_0_bank_2
-	.addr img_0_bank_s
-	.byte <.bank(img_0_pal)
-	.byte <.bank(img_0_attr)
-	.byte <.bank(img_0_oam)
-	.byte <.bank(img_0_bank_0)
-	.byte <.bank(img_0_bank_1)
-	.byte <.bank(img_0_bank_2)
-	.byte <.bank(img_0_bank_s)
-
-img_1:
-	.addr img_1_pal
-	.addr img_1_attr
-	.addr img_1_oam
-	.addr img_1_bank_0
-	.addr img_1_bank_1
-	.addr img_1_bank_2
-	.addr img_1_bank_s
-	.byte <.bank(img_1_pal)
-	.byte <.bank(img_1_attr)
-	.byte <.bank(img_1_oam)
-	.byte <.bank(img_1_bank_0)
-	.byte <.bank(img_1_bank_1)
-	.byte <.bank(img_1_bank_2)
-	.byte <.bank(img_1_bank_s)
-
-img_table:
-	.addr img_0
-	.addr img_1
-img_table_size := * - img_table
 
 ; sprite 0 hit happens precisely on this pixel
 titlescreen_sprite0_data:

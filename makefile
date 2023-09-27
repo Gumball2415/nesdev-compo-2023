@@ -131,11 +131,9 @@ $(objdir)/graphics.o: \
 	$(objdir)/img_title/bank_0.donut \
 	$(objdir)/img_title/oam.s \
 	$(objdir)/img_title/img_title_nam.donut \
-	$(imgbankscmplistmac) \
-	$(imgmiscsrclistmac) \
-	$(imgattrlistmac) \
 	$(objdir)/universal.donut \
-	$(objdir)/universal_pal.s
+	$(objdir)/universal_pal.s \
+	$(objdir)/img_index.s
 
 
 # Rules for Dn-FT exports
@@ -159,6 +157,12 @@ $(objdir)/%.bmp: $(imgdir)/%.bmp
 
 # prepare input bitmaps
 # ensure the bmp 2 donut pipeline is preserved
+$(objdir)/img_index.s: \
+	$(imgbankscmplistmac) \
+	$(imgmiscsrclistmac) \
+	$(imgattrlistmac)
+	$(PY) tools/img_index.py --input_images $(imglist) --obj_dir $(objdir)
+
 $(imgbankscmplistmac): $(imgbankschrlistmac)
 $(imgbankschrlistmac): $(imgbanksbmplistmac)
 $(imgbanksbmplistmac): $(imgbmprawlistmac)
