@@ -28,9 +28,7 @@
 .import inc_ppuaddr_ptr
 
 .segment "STACKRAM"
-donut_buffer: .res 64
-;for some weird reason it actually uses the space 64 bytes away
-donut_block_buffer = donut_buffer - 64
+donut_block_buffer: .res 64
 .segment "ZEROPAGE"
 donut_stream_ptr:       .res 2
 donut_block_count:      .res 1
@@ -309,21 +307,21 @@ shorthand_plane_def_table:
 PPU_DATA = $2007
   stx donut_block_count
   block_loop:
-    ldx #64
+    ldx #0
     jsr donut_decompress_block
-    cpx #128
+    cpx #64
     bne end_block_upload
       ; bail if donut_decompress_block does not
       ; advance X by 64 bytes, indicating a header error.
-
-    ldx #64
+	ldx #0
     upload_loop:
       jsr sync_ppuaddr_ptr
       lda donut_block_buffer, x
       sta PPU_DATA
       jsr inc_ppuaddr_ptr
       inx
-    bpl upload_loop
+	  cpx #64
+    bne upload_loop
     ldx donut_block_count
   bne block_loop
 end_block_upload:

@@ -12,10 +12,10 @@ ppu_scroll_y:   .res 1
 oam_size:       .res 1
 shadow_oam_ptr: .res 2
 ; palette buffers, stored here for speed
-shadow_palette_primary: .res 32
+shadow_palette_primary: .res 32 ; primary buffer, tranferred to PPUDATA
+shadow_palette_secondary: .res 32 ; secondary buffer, transferred to primary with processing
 
 ; misc. stuff
-shadow_pal_ptr: .res 2
 pal_fade_amt:   .res 1
 pal_fade_ctr:   .res 1
 pal_fade_int:   .res 1
@@ -23,9 +23,6 @@ fade_dir:       .res 1
 img_progress:   .res 1
 img_index:      .res 1
 img:            .tag img_DATA_PTR
-
-.segment "STACKRAM"
-shadow_palette_secondary: .res 32
 
 
 .segment "PRG0_8000"
@@ -99,8 +96,9 @@ loadscreen_sprite0_data:
 ; @param fade_dir 1 = fade in, -1 = fade out
 ; @param pal_fade_ctr increment ticks per frame
 ; @param pal_fade_int interval of ticks
+; @param pal_fade_amt fade steps to fade the palette
 .proc run_fade
-	ldx pal_fade_ctr
+	lda pal_fade_ctr
 	beq @tick_fade
 
 	dec pal_fade_ctr
@@ -519,7 +517,7 @@ loop2:
 .endproc
 
 ;;
-; transfers palette data to shadow_pal_ptr
+; transfers palette data to shadow_palette_secondary
 ; @param temp1_16 pointer to palette data
 .proc transfer_img_pal
 	ldy #0

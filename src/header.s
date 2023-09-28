@@ -7,7 +7,6 @@ temp1_8:        .res 1
 temp2_8:        .res 1
 temp1_16:       .res 2
 temp2_16:       .res 2
-temp3_16:       .res 2
 sys_state:      .res 1
 sys_mode:       .res 1
 
