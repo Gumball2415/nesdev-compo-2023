@@ -481,20 +481,19 @@ def load_bitmap(filename, max_tiles=None):
 
 # Rendering .sav file to bitmap #####################################
 
-# Palette generated with Bisqwit's tool
-# using settings close to gamma 2, sat 1.2
-bisqpal = bytes.fromhex(
-    '656565002d69131f7f3c137c600b62730a37710f075a1a00'
-    '3428000b3400003c00003d10003840000000000000000000'
-    'aeaeae0f63b34051d07841cca736a9c03470bd3c309f4a00'
-    '6d5c00366d0007770400793d00727d000000000000000000'
-    'fefeff5db3ff8fa1ffc890fff785faff83c0ff8b7fef9a49'
-    'bdac2c85bc2f55c7533cc98c3ec2cd4e4e4e000000000000'
-    'fefeffbcdfffd1d8ffe8d1fffbcdfdffcce5ffcfcaf8d5b4'
-    'e4dca8cce3a9b9e8b8aee8d0afe5eab6b6b6000000000000'
+# Reference palette by Persune
+refpal = bytes.fromhex(
+    '57575700166807067b2a00754800594e00214c0000381100'
+    '202900003200003800003406002d41000000000000000000'
+    'a5a5a5184cbb3837d6681fce8e1ca6991d5c962a1e7a4600'
+    '5964002a73000e7a00007536036985000000000000000000'
+    'ffffff6da3ff8e8dffc075ffe771fff372b3f08073d39d29'
+    'b0bc1180cb1662d33b4dce8c57c1de414141000000000000'
+    'ffffffc4daffd2d1ffe6c7fff8c9fffac6e1f9ccc7edd8a9'
+    'e2e7a2cceaa1c0edb0b7ebd1bfe9f5b3b3b3000000000000'
 )
-bisqpal = [bisqpal[i:i + 3]
-          for i in range(0, len(bisqpal), 3)]
+refpal = [refpal[i:i + 3]
+          for i in range(0, len(refpal), 3)]
 
 def sliver_to_texels(lo, hi):
     return [((lo >> i) & 1) | (((hi >> i) & 1) << 1)
@@ -540,7 +539,7 @@ def decode_attribute_table(attrs):
 def render_bitmap(sav):
     chrdata = sav[0x0000:0x1000]
     palette = sav[0x1F00:0x1F20]
-    rgbpalette = [bisqpal[c & 0x3F] for c in palette]
+    rgbpalette = [refpal[c & 0x3F] for c in palette]
     tiles = chrbank_to_texels(chrdata)
     nam = sav[0x1800:0x1C00]
     attrs = decode_attribute_table(nam[0x3C0:])
@@ -557,7 +556,7 @@ def render_bitmap(sav):
 def render_tilesheet(sav, colorset):
     chrdata = sav[0x0000:0x1000]
     palette = sav[0x1F00:0x1F20]
-    rgbpalette = [bisqpal[c & 0x3F] for c in palette]
+    rgbpalette = [refpal[c & 0x3F] for c in palette]
     tiles = texels_to_pil(chrbank_to_texels(chrdata))
     subpal = rgbpalette[0:1] + rgbpalette[colorset*4+1:colorset*4+4]
     tiles.putpalette(b''.join(subpal) * 64)
@@ -718,7 +717,7 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False):
     from chnutils import dedupe_chr
     im = Image.open(filename)
     (w, h) = im.size
-    palettes = [tuple(bisqpal[i]) for i in palette]
+    palettes = [tuple(refpal[i]) for i in palette]
     palettes = [[palettes[0]] + palettes[i + 1:i + 4]
                 for i in range(0, 16, 4)]
 
@@ -776,7 +775,7 @@ def save_swatches(filename=None):
     if filename is None or filename.lower().endswith(".txt"):
         lines = "".join(
             "%02x\t#%s\n" % (i, b.hex())
-            for i, b in enumerate(bisqpal)
+            for i, b in enumerate(refpal)
         )
         if filename is None:
             sys.stdout.write(lines)
@@ -797,7 +796,7 @@ Columns: 16
 """]
         lines.extend(
             "%3d%4d%4d\t$%02x %s\n" % (b[0], b[1], b[2], i, colorname(i))
-            for i, b in enumerate(bisqpal)
+            for i, b in enumerate(refpal)
         )
         with open(filename, "w") as outfp:
             outfp.writelines(lines)
@@ -810,13 +809,13 @@ Columns: 16
     # C:\Program Files (x86)\FCEUX\palettes
     if filename.lower().endswith(".pal"):
         with open(filename, "wb") as outfp:
-            outfp.writelines(bisqpal)
+            outfp.writelines(refpal)
         return
 
     # Otherwise, it's an image (.bmp, .gif, .png)
     cellw, cellh = 24, 24
     im = Image.new('P', (16*cellw, 5*cellh), 0x0F)
-    im.putpalette(b''.join(bisqpal) + b"\xff\x00\xff"*192)
+    im.putpalette(b''.join(refpal) + b"\xff\x00\xff"*192)
     fnt = ImageFont.load_default()
     dc = ImageDraw.Draw(im)
     captiontxt = "savtool's NES palette"
