@@ -13,7 +13,6 @@ oam_size:       .res 1
 shadow_oam_ptr: .res 2
 ; palette buffers, stored here for speed
 shadow_palette_primary: .res 32 ; primary buffer, tranferred to PPUDATA
-shadow_palette_secondary: .res 32 ; secondary buffer, transferred to primary with processing
 
 ; misc. stuff
 pal_fade_amt:   .res 1
@@ -23,6 +22,9 @@ fade_dir:       .res 1
 img_progress:   .res 1
 img_index:      .res 1
 img:            .tag img_DATA_PTR
+
+.segment "STACKRAM"
+shadow_palette_secondary: .res 32 ; transferred to primary with add. processing
 
 
 .segment "PRG0_8000"
@@ -219,7 +221,7 @@ loadscreen_sprite0_data:
 ; decompresses and transfers 4K chr data to PPU
 ; @param A base address of CHR page ($00 or $10)
 ; @param temp1_16 pointer to compressed chr data
-.import donut_block_ayx
+.import donut_bulk_load_ayx
 .proc transfer_4k_chr
 	bit PPUSTATUS
 	sta temp2_16+1
@@ -229,8 +231,8 @@ loadscreen_sprite0_data:
 	sty PPUADDR
 	lda temp1_16+1
 	ldy temp1_16+0
-	ldx #64
-	jsr donut_block_ayx
+	ldx #4096/64
+	jsr donut_bulk_load_ayx
 
 	rts
 .endproc
@@ -626,7 +628,7 @@ loop2:
 	lda temp1_16+1
 	ldy temp1_16+0
 	ldx #16
-	jsr donut_block_ayx
+	jsr donut_bulk_load_ayx
 
 	rts
 .endproc

@@ -4,6 +4,8 @@
 .ifndef GLOBAL_INC
 .define GLOBAL_INC
 
+; TODO: clean this up. curse you ca65!!!
+
 ; global zeropage stuff
 .globalzp temp1_8
 .globalzp temp2_8
@@ -40,7 +42,8 @@
 .globalzp pal_fade_ctr
 .globalzp pal_fade_amt
 .globalzp fade_dir
-.globalzp shadow_palette_primary, shadow_palette_secondary
+.globalzp shadow_palette_primary
+.global shadow_palette_secondary
 .globalzp s_PPUCTRL
 .globalzp s_PPUMASK
 .globalzp ppu_scroll_x
