@@ -102,10 +102,15 @@ imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
 imgattrlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.bin)
 imgpartialnamlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.nam)
 
-imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
+imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2)
 imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).donut)
 imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
 imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
+
+imgbank_srawlistmac = $(foreach o,$(imglist),$(o)/bank_s)
+imgbank_scmplistmac = $(foreach o,$(imgbank_srawlistmac),$(objdir)/$(o).donut)
+imgbank_schrlistmac = $(foreach o,$(imgbank_srawlistmac),$(objdir)/$(o).chr)
+imgbank_sbmplistmac = $(foreach o,$(imgbank_srawlistmac),$(objdir)/$(o).bmp)
 
 
 $(outdir)/map.txt $(outdir)/$(filetitle).nes: $(make_dirs) $(objlistmac)
@@ -144,14 +149,6 @@ $(objdir)/music.asm: $(musdir)/music.asm
 
 # Rules for CHR data
 
-# some preprocessed CHR can be directly copied
-$(objdir)/%.chr: $(imgdir)/%.chr
-	cp $< $@
-
-# convert seperate indexed bitmap into 4k CHR
-$(objdir)/%.chr: $(objdir)/%.bmp
-	$(PY) tools/pilbmp2nes.py $< $@
-
 $(objdir)/%.bmp: $(imgdir)/%.bmp
 	cp $< $@
 
@@ -159,13 +156,27 @@ $(objdir)/%.bmp: $(imgdir)/%.bmp
 # ensure the bmp 2 donut pipeline is preserved
 $(objdir)/img_index.s: \
 	$(imgbankscmplistmac) \
+	$(imgbank_scmplistmac) \
 	$(imgmiscsrclistmac) \
 	$(imgattrlistmac)
 	$(PY) tools/img_index.py --input_images $(imglist) --obj_dir $(objdir)
 
+
+
 $(imgbankscmplistmac): $(imgbankschrlistmac)
-$(imgbankschrlistmac): $(imgbanksbmplistmac)
-$(imgbanksbmplistmac): $(imgbmprawlistmac)
+$(imgbankschrlistmac): $(imgbanksbmplistmac) $(imgmiscsrclistmac)
+	$(PY) tools/savtool.py \
+	--palette=`grep '\.byte' $(dir $@)pal.s | \
+	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
+	--write-chr 0 --chr4kpage-only $(basename $@).bmp $@
+
+# exception for bank_s
+$(objdir)/%/bank_s.donut: $(objdir)/%/bank_s.chr
+$(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
+	$(PY) tools/pilbmp2nes.py $< $@
+
+$(imgbanksbmplistmac): $(imgbanksrawlistmac)
+$(imgbanksrawlistmac): $(imgbmprawlistmac)
 $(imgbmprawlistmac):
 	cp $(imgdir)/$@ $(objdir)/$@
 	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
@@ -209,7 +220,7 @@ $(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(objdir)/$$*/$$*.bmp $$(dir $$@)
 	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
 	--attr-only $< $@
 
-# special handling for title card
+# special handling for title card and universal palette/tiles
 
 $(objdir)/img_title/bank_0.donut: $(objdir)/img_title/bank_0.chr
 	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
@@ -218,24 +229,24 @@ $(objdir)/img_title/img_title_nam.donut: $(objdir)/img_title/img_title.nam
 	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
 
 $(objdir)/img_title/bank_0.chr: $(objdir)/img_title/img_title.sav
-	head -c +4096 $< > $@
+	$(PY) tools/savtool.py $< $@
 
-$(objdir)/img_title/img_title.nam: $(objdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
-	$(PY) tools/savtool.py  \
-	--palette=`grep '\.byte' $(objdir)/universal_pal.s | \
-	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` $< $@
+$(objdir)/img_title/img_title.nam: $(objdir)/img_title/img_title.sav
+	$(PY) tools/savtool.py $< $@
 
 $(objdir)/img_title/img_title.sav: $(objdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
 	$(PY) tools/savtool.py \
 	--palette=`grep '\.byte' $(objdir)/universal_pal.s | \
 	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` $< $@
 
-$(objdir)/universal_pal.s: universal_pal.s
-universal_pal.s:
-	cp $(imgdir)/$@ $(objdir)/$@
+$(objdir)/universal_pal.s: $(imgdir)/universal_pal.s
+	cp $< $@
 
-$(objdir)/img_title/oam.s: img_title/oam.s
-img_title/oam.s:
-	cp $(imgdir)/$@ $(objdir)/$@
+$(objdir)/img_title/oam.s: $(imgdir)/img_title/oam.s
+	cp $< $@
 
 $(imgattrlistmac): $(objdir)/%/attr.bin: $(objdir)/%/attr.nam
+
+$(objdir)/universal.donut: $(objdir)/universal.chr
+$(objdir)/universal.chr: $(imgdir)/universal.bmp
+	$(PY) tools/pilbmp2nes.py $< $@

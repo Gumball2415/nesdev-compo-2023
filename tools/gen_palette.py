@@ -212,7 +212,7 @@ def dedupe_palettes(palette_list: List[List[int]]) -> List[Tuple[int]]:
 
     if len(deduped_palettes) <= 4:
         return [tpl[0] for tpl in deduped_palettes]
-    else
+    else:
         raise NotImplementedError("Palette vector quantization is still not implemented yet")
 
 def pad_palettes(palette_list: List[Tuple[int]], bgcolor=0x0f) -> List[int]:

@@ -11,6 +11,9 @@ Modified by Kagamiin~:
 - Fixed bug with max_tiles argument not being honored properly
 - Added option to generate only attribute table, skipping CHR and tile data for fast execution
 
+Modifications by Persune:
+- Add option to write unoptimized deduplicated tileset
+
 """
 from __future__ import with_statement, division, print_function, unicode_literals
 import sys, os, re
@@ -169,6 +172,10 @@ def mkparser():
                       default=False, action="store_true",
                       help="skip generation of CHR and nametable data and generate only attribute tables "
                            "(INFILE must be .bmp or .png, requires --palette)")
+    parser.add_option("--chr4kpage-only", dest="chr4kpageonly",
+                      default=False, action="store_true",
+                      help="assumes input image is entire 4k bank. skip CHR deduplication and optimization "
+                           "(INFILE must be .bmp or .png, requires --palette)")
     parser.add_option("--print-palette", dest="printpalette",
                       default=False, action="store_true",
                       help="write image's 32-character hex palette to standard output",)
@@ -304,10 +311,17 @@ def parse_argv(argv):
     if options.attronly and outtype in ('chr', 'bmp'):
         parser.error("cannot write attributes to an image or CHR file")
 
+    if options.chr4kpageonly and not options.palette:
+        parser.error("writing 4K CHR page requires providing a palette (--palette)")
+    if options.chr4kpageonly and intype != 'bmp':
+        parser.error("writing 4K CHR page requires an image file as input")
+    if options.chr4kpageonly and options.writechr not in (0, 1, 2, 3, None):
+        parser.error("writing 4K CHR page requires writing tilesheet")
+
     return (infilename, outfilename, options.chrfilename,
             options.xscroll, options.yscroll,
             options.palette, options.printpalette, options.writechr,
-            options.show, remap, options.swatchfilename, options.max_tiles, options.attronly)
+            options.show, remap, options.swatchfilename, options.max_tiles, options.attronly, options.chr4kpageonly)
 
 def test_argv():
     from shlex import split as strtoargs
@@ -425,14 +439,14 @@ def load_nam(filename):
 
 # Bitmap image loading ##############################################
 
-def bitmap_to_sav(im, max_tiles=None):
+def bitmap_to_sav(im, max_tiles=None, chr4kpageonly=False):
     """Convert a PIL bitmap without remapping the colors."""
     from pilbmp2nes import pilbmp2chr
     from chnutils import dedupe_chr
     (w, h) = im.size
     im = pilbmp2chr(im, 8, 8)
 
-    if max_tiles is not None:
+    if max_tiles is not None and not chr4kpageonly:
         from jrtilevq import reduce_tiles
         im = reduce_tiles(im, max_tiles)
 
@@ -474,10 +488,10 @@ def ensure_pil():
               file=sys.stderr)
         sys.exit(1)
 
-def load_bitmap(filename, max_tiles=None):
+def load_bitmap(filename, max_tiles=None, chr4kpageonly=False):
     """Load a BMP, GIF, or PNG image without remapping the colors."""
     ensure_pil()
-    return bitmap_to_sav(Image.open(filename), max_tiles)
+    return bitmap_to_sav(Image.open(filename), max_tiles, chr4kpageonly)
 
 # Rendering .sav file to bitmap #####################################
 
@@ -611,7 +625,7 @@ def remap_sav_to_chr(srcsav, dstsheet):
     return b''.join((b''.join(dsttiles),
                     srcsav[0x1000:0x1800], newnam, srcsav[0x1BC0:]))
 
-def sav_reduce_tiles(sav, max_tiles):
+def sav_reduce_tiles(sav, max_tiles, chr4kpageonly=False):
     from jrtilevq import reduce_tiles
 
     # Reconstitute image from tile set and tile map
@@ -619,7 +633,8 @@ def sav_reduce_tiles(sav, max_tiles):
     chrdata = [chrdata[i] for i in sav[0x1800:0x1BC0]]
 
     # Reduce tiles
-    chrdata = reduce_tiles(chrdata, max_tiles)
+    if not chr4kpageonly:
+        chrdata = reduce_tiles(chrdata, max_tiles)
     print(len(chrdata), max_tiles)
 
     # Form the new tilemap
@@ -711,7 +726,7 @@ def colorround(im, palettes):
     attrs = [attrs[i:i + attrw] for i in range(0, len(attrs), attrw)]
     return (imf, attrs)
 
-def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False):
+def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False, chr4kpageonly=False):
     ensure_pil()
     from pilbmp2nes import pilbmp2chr
     from chnutils import dedupe_chr
@@ -721,7 +736,7 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False):
     palettes = [[palettes[0]] + palettes[i + 1:i + 4]
                 for i in range(0, 16, 4)]
 
-    if w != 256 or h != 240:
+    if (w != 256 or h != 240) and not chr4kpageonly:
         i2 = Image.new("RGB", (256, 240), palettes[0][0])
         i2.paste(im, ((256 - w) // 2, (240 - h) // 2))
         im = i2
@@ -729,7 +744,7 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False):
     if len(attrs) % 2:
         attrs.append([0] * len(attrs[0]))
     if not attronly:
-        sav = bitmap_to_sav(imf, max_tiles=max_tiles)
+        sav = bitmap_to_sav(imf, max_tiles=max_tiles, chr4kpageonly=chr4kpageonly)
     else:
         # Generate empty sav hunks
         chrdata = b'\x00' * 4096
@@ -850,7 +865,7 @@ def main(argv=None):
     args = parse_argv(argv or sys.argv)
     (infilename, outfilename, chrfilename,
      xscroll, yscroll, palette, printpalette, writechr,
-     show, remap, swatchfilename, max_tiles, attronly) = args
+     show, remap, swatchfilename, max_tiles, attronly, chr4kpageonly) = args
     progname = os.path.basename(sys.argv[0])
 
     if swatchfilename:
@@ -895,7 +910,7 @@ def main(argv=None):
         # max_tiles has to be passed to bitmap loaders because
         # otherwise they can 
         if palette:
-            sav = load_bitmap_with_palette(infilename, palette, max_tiles, attronly)
+            sav = load_bitmap_with_palette(infilename, palette, max_tiles, attronly, chr4kpageonly)
         else:
             sav = load_bitmap(infilename, max_tiles)
     elif intype == 'nam':
@@ -908,7 +923,7 @@ def main(argv=None):
     ntuniques = len(set(sav[0x1800:0x1BC0]))
     if max_tiles is not None and max_tiles < ntuniques:
         print("Reducing", ntuniques, "uniques to", max_tiles)
-        sav = sav_reduce_tiles(sav, max_tiles)
+        sav = sav_reduce_tiles(sav, max_tiles, chr4kpageonly)
 
     changed = False
     if paltype == 'literal':
