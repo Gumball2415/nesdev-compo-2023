@@ -32,7 +32,7 @@ mode_select: .res 1
 
 @wait_sprite0_hit:
 	bit PPUSTATUS
-	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
+	bvc @wait_sprite0_hit ; wait for sprite 0 hit
 
 	; splitting the a53_write macro in half for timing reasons 2/2
 	sta A53_REG_SELECT
@@ -176,7 +176,7 @@ jump_table_hi:
 
 @wait_sprite0_hit:
 	bit PPUSTATUS
-	bvc @wait_sprite0_hit  ; spin on sprite 0 hit
+	bvc @wait_sprite0_hit ; wait for sprite 0 hit
 	dec s_A53_MUTEX
 	lda #NT_2000|OBJ_1000|BG_1000|VBLANK_NMI
 	sta PPUCTRL
@@ -249,7 +249,7 @@ title_select:
 .endproc
 
 .proc gallery_chr_transfer_interrupt
-	lda #$24
+	lda #NAMETABLE_C
 	jsr update_progress_bar
 	; use shadow oam 2 for sprite 0 hit
 	lda #>OAM_SHADOW_2
@@ -266,10 +266,13 @@ title_select:
 	bit PPUSTATUS
 	bvs @wait_sprite0_reset
 .endif
+	
+	; since we are interrupting mainloop, run music here too
+	jsr run_music
 
 @check_sprite0:
 	bit PPUSTATUS
-	bvc @check_sprite0  ; spin on sprite 0 hit
+	bvc @check_sprite0 ; wait for sprite 0 hit
 
 	; let the next update_graphics know that we have sprite0
 	lda sys_mode
@@ -288,9 +291,6 @@ title_select:
 	sta PPUADDR
 	lda temp2_16+0
 	sta PPUADDR
-	
-	; since we are interrupting mainloop, run music here too
-	jsr run_music
 	rts
 .endproc
 
@@ -526,10 +526,10 @@ title_select:
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
-	lda #$20
+	lda #NAMETABLE_A
 	jsr load_titlescreen
 
-	lda #$20
+	lda #NAMETABLE_A
 	jsr set_title_nametable
 
 	; let the NMI handler know that we're done initializing
@@ -665,10 +665,10 @@ gallery_right:
 	sta s_A53_CHR_BANK
 	a53_set_chr_safe s_A53_CHR_BANK
 
-	lda #$20
+	lda #NAMETABLE_A
 	jsr set_gallery_nametable
 
-	lda #$24
+	lda #NAMETABLE_C
 	jsr set_gallery_loading_screen
 	
 	; let the system know we've already initialized the nametables

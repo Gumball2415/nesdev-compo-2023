@@ -134,7 +134,9 @@ loadscreen_sprite0_data:
 
 ;;
 ; @param pal_fade_amt incremental steps to dim the palette. range is 0 to 4
-; @param temp1_8, temp2_8 scratch bytes
+; temp1_8: fade amount for brightness nybble
+; temp2_8: hue nybble scratch byte
+; Y: brightness nybble scratch byte
 .proc fade_shadow_palette
 	lda pal_fade_amt
 	and #%00000111
@@ -171,16 +173,14 @@ loadscreen_sprite0_data:
 	sec
 	sbc pal_fade_amt
 	sta temp2_8 ; hue nybble is stored in temp2_8
-	; check color underflow
-	beq @color_x0_underflow
+	beq @color_underflow ; check for color $x0
 	bpl @recombine
-	jmp @wrap_hue
+	; fall through
 
-@color_x0_underflow:
-	sbc #1
-@wrap_hue:
-	sbc #3
-	adc #16
+@color_underflow:
+	; handle color underflow
+	clc
+	adc #12
 	sta temp2_8
 	; fall through
 
@@ -195,7 +195,6 @@ loadscreen_sprite0_data:
 	jmp @write_entry
 
 @xD_xF_color:
-	cmp #$0D
 	bne @set_to_black ; $xE/$xF colors are transmuted to $0F
 	sta temp2_8
 	cpy #$10
@@ -207,6 +206,7 @@ loadscreen_sprite0_data:
 
 @set_to_black:
 	lda #$0F
+	; fall through
 
 @write_entry:
 	sta shadow_palette_primary,x
@@ -394,7 +394,7 @@ loop2:
 	; setup loading screen NMI
 	lda s_PPUCTRL
 	pha
-	lda #NT_2400|OBJ_8X16|BG_1000|VBLANK_NMI
+	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
 
@@ -422,7 +422,7 @@ loop2:
 	lda z:img+img_DATA_PTR::img_ATTR_PTR
 	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
 	jsr load_ptr_temp1_16
-	lda #$23
+	lda #NAMETABLE_A
 	jsr transfer_img_attr
 
 	lda z:img+img_DATA_PTR::img_OAM_LOC
@@ -535,7 +535,7 @@ loop2:
 .endproc
 
 ;;
-; decompresses and transfers metasprite data to shadow OAM
+; transfers OAM data to shadow OAM
 ; @param temp1_16 pointer to OAM data
 .proc transfer_img_oam
 	ldy oam_size
@@ -551,9 +551,9 @@ loop2:
 .endproc
 
 ;;
-; decompresses and transfers metasprite data to shadow OAM
+; transfers metasprite data to shadow OAM
 ; @param temp1_16 pointer to OAM data
-; @param X size of sprite data
+; @param X size of metasprite data
 .proc transfer_sprite
 	; preserve shadow OAM pointer
 	lda shadow_oam_ptr+0
@@ -588,10 +588,12 @@ loop2:
 
 ;;
 ; decompresses and transfers attribute data to PPU
-; @param A base address of attribute table ($23, $27, $2B, or $2F)
+; @param A base address of nametable ($20, $24, $28, or $2C)
 ; @param temp1_16 pointer to compressed attribute data
 ; @param temp2_16 shadow pointer to PPUADDR
 .proc transfer_img_attr
+	clc
+	adc #3 ; attribute table is last 64 bytes
 	bit PPUSTATUS
 	sta temp2_16+1
 	sta PPUADDR
@@ -611,7 +613,6 @@ loop2:
 
 	rts
 .endproc
-
 
 ;;
 ; decompresses and transfers nametable and attribute data to PPU
@@ -694,7 +695,6 @@ txt_now_loading:
 .proc set_gallery_loading_screen
 	pha
 	; we don't really need to zero the nametable again
-	; but we do need to redraw the loading bar
 	lda sys_mode
 	and #sys_MODE_GALLERYINIT
 	bne @skip_nametable_init
