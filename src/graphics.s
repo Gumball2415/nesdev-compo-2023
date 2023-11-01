@@ -13,6 +13,7 @@ oam_size:       .res 1
 shadow_oam_ptr: .res 2
 ; palette buffers, stored here for speed
 shadow_palette_primary: .res 32 ; primary buffer, tranferred to PPUDATA
+shadow_palette_secondary: .res 32 ; transferred to primary with add. processing
 
 ; misc. stuff
 pal_fade_amt:   .res 1
@@ -22,10 +23,6 @@ fade_dir:       .res 1
 img_progress:   .res 1
 img_index:      .res 1
 img:            .tag img_DATA_PTR
-
-.segment "STACKRAM"
-shadow_palette_secondary: .res 32 ; transferred to primary with add. processing
-
 
 .segment "PRG0_8000"
 universal_tileset:
@@ -628,7 +625,7 @@ loop2:
 	sty PPUADDR
 	lda temp1_16+1
 	ldy temp1_16+0
-	ldx #16
+	ldx #1024/64
 	jsr donut_bulk_load_ayx
 
 	rts
@@ -774,86 +771,86 @@ txt_now_loading:
 	rts
 .endproc
 
-txt_gallery:
-	.byte "gallery"
-	txt_gallery_size := * - txt_gallery
-txt_credits:
-	.byte "credits"
-	txt_credits_size := * - txt_credits
-txt_shvtera_group:
-	.byte "shvtera group ", $04
-	txt_shvtera_group_size := * - txt_shvtera_group
-txt_NesDev_2023:
-	.byte $08,$09,$0A,$0B,$0C,$0D,$0E, " ", $10,$11,$12,$13
-	txt_NesDev_2023_size := * - txt_NesDev_2023
-;;
-; sets the nametable for the title screen
-; @param A base address of nametable ($20, $24, $28, or $2C)
-; @param temp1_8 nametable high byte scratch pointer
-.proc set_title_nametable
-	sta temp1_8
+; txt_gallery:
+	; .byte "gallery"
+	; txt_gallery_size := * - txt_gallery
+; txt_credits:
+	; .byte "credits"
+	; txt_credits_size := * - txt_credits
+; txt_shvtera_group:
+	; .byte "shvtera group ", $04
+	; txt_shvtera_group_size := * - txt_shvtera_group
+; txt_NesDev_2023:
+	; .byte $08,$09,$0A,$0B,$0C,$0D,$0E, " ", $10,$11,$12,$13
+	; txt_NesDev_2023_size := * - txt_NesDev_2023
+; ;;
+; ; sets the nametable for the title screen
+; ; @param A base address of nametable ($20, $24, $28, or $2C)
+; ; @param temp1_8 nametable high byte scratch pointer
+; .proc set_title_nametable
+	; sta temp1_8
 	
-	; set address to offset $026D
-	; draw option gallery text
-	bit PPUSTATUS
-	inc temp1_8
-	inc temp1_8
-	lda temp1_8
-	sta PPUADDR
-	lda #$6D
-	sta PPUADDR
-	lda #<txt_gallery
-	ldx #>txt_gallery
-	jsr load_ptr_temp1_16
-	lda #txt_gallery_size
-	sta temp2_8
-	jsr draw_text
+	; ; set address to offset $026D
+	; ; draw option gallery text
+	; bit PPUSTATUS
+	; inc temp1_8
+	; inc temp1_8
+	; lda temp1_8
+	; sta PPUADDR
+	; lda #$6D
+	; sta PPUADDR
+	; lda #<txt_gallery
+	; ldx #>txt_gallery
+	; jsr load_ptr_temp1_16
+	; lda #txt_gallery_size
+	; sta temp2_8
+	; jsr draw_text
 	
-	; set address to offset $02AD
-	; draw option credits text
-	lda temp1_8
-	sta PPUADDR
-	lda #$AD
-	sta PPUADDR
+	; ; set address to offset $02AD
+	; ; draw option credits text
+	; lda temp1_8
+	; sta PPUADDR
+	; lda #$AD
+	; sta PPUADDR
 
-	lda #<txt_credits
-	ldx #>txt_credits
-	jsr load_ptr_temp1_16
-	lda #txt_gallery_size
-	sta temp2_8
-	jsr draw_text
+	; lda #<txt_credits
+	; ldx #>txt_credits
+	; jsr load_ptr_temp1_16
+	; lda #txt_gallery_size
+	; sta temp2_8
+	; jsr draw_text
 	
-	; set address to offset $0342
-	; draw shvtera text
-	inc temp1_8
-	lda temp1_8
-	sta PPUADDR
-	lda #$42
-	sta PPUADDR
+	; ; set address to offset $0342
+	; ; draw shvtera text
+	; inc temp1_8
+	; lda temp1_8
+	; sta PPUADDR
+	; lda #$42
+	; sta PPUADDR
 
-	lda #<txt_shvtera_group
-	ldx #>txt_shvtera_group
-	jsr load_ptr_temp1_16
-	lda #txt_shvtera_group_size
-	sta temp2_8
-	jsr draw_text
+	; lda #<txt_shvtera_group
+	; ldx #>txt_shvtera_group
+	; jsr load_ptr_temp1_16
+	; lda #txt_shvtera_group_size
+	; sta temp2_8
+	; jsr draw_text
 	
-	; set address to offset $0352
-	; draw nesdev text
-	lda temp1_8
-	sta PPUADDR
-	lda #$52
-	sta PPUADDR
+	; ; set address to offset $0352
+	; ; draw nesdev text
+	; lda temp1_8
+	; sta PPUADDR
+	; lda #$52
+	; sta PPUADDR
 
-	lda #<txt_NesDev_2023
-	ldx #>txt_NesDev_2023
-	jsr load_ptr_temp1_16
-	lda #txt_NesDev_2023_size
-	sta temp2_8
-	jsr draw_text
+	; lda #<txt_NesDev_2023
+	; ldx #>txt_NesDev_2023
+	; jsr load_ptr_temp1_16
+	; lda #txt_NesDev_2023_size
+	; sta temp2_8
+	; jsr draw_text
 
-	rts
-.endproc
+	; rts
+; .endproc
 
 ;;
 ; sets the nametable for the title screen

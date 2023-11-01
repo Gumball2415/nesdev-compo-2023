@@ -36,7 +36,7 @@ with Image.open(args.input_image) as image:
         sys.exit("error: {0} is not 256x192".format(args.input_image))
 
     if not (image.mode == "P") or (image.mode == "PA"):
-        sys.exit("error: {0} is not indexed",format(args.input_image))
+        sys.exit("error: {0} is not indexed".format(args.input_image))
 
     # check for sprite 0 
     sprite0_region = image.getpixel((248, 63))

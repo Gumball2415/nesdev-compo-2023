@@ -4,12 +4,33 @@
 
 This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
 
-Main collaborators:
-- Persune (Gumball2415)
-- Kagamiin
-- Kasumi (consulting)
-
 "SHVTERA" is an amalgamation of "shutter", i.e. the one in a camera. this is dedicated to my friends who make amazing art, and i wanted to capture them with a camera of my own, i.e. this entry.
+
+## Credits
+
+- ### Main programming:
+	- Kagamiin~
+	- Persune (Gumball2415)
+- ### Assistance/Consulting:
+	- Kagamiin~
+	- Kasumi
+	- Fiskbit
+	- lidnariq
+	- zeta0134
+- ### External libraries
+	- bhop
+		- licensed under the MIT-0 license. Copyright 2023 zeta0134.
+	- Donut
+		- licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
+	- `savtool.py`
+		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick
+		- Modifications by Persune and Kagamiin~ are licensed under the MIT-0 license.
+	- `pilbmp2nes.py`
+		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick
+	- Action53 mapper configuration and mapper helper functions
+		- licensed under the MIT license. Copyright 2023 zeta0134.
+	- `nrom_template`
+		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
 
 ## Compiling
 
@@ -25,9 +46,9 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 - This project is licensed under the MIT license.
 - Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2023 zeta0134.
 - bhop is licensed under the MIT-0 license. Copyright 2023 zeta0134.
-- Donut NES CHR encoder is licensed under GNU GPL v3+. Donut NES CHR decoder is licensed under the GNU All-Permissive License. Copyright 2019 Johnathan Roatch
+- Donut NES CHR encoder and decoder is licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
 - nrom-template related functions and compiling scripts are licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
-- "SHVTERA" image conversion scripts are licensed under the MIT-0 license. Copyright 2023 Persune
+- "SHVTERA" helper image conversion scripts and modifications are licensed under the MIT-0 license. Copyright 2023 Persune
 
 ## Credits
 

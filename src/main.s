@@ -178,8 +178,6 @@ jump_table_hi:
 	bit PPUSTATUS
 	bvc @wait_sprite0_hit ; wait for sprite 0 hit
 	dec s_A53_MUTEX
-	lda #NT_2000|OBJ_1000|BG_1000|VBLANK_NMI
-	sta PPUCTRL
 
 	; let update_graphics know that we have sprite0
 	lda sys_mode
@@ -199,10 +197,6 @@ program_table_hi:
 	.byte .hibyte(title_subroutine)
 	.byte .hibyte(gallery_subroutine)
 	.byte .hibyte(credits_subroutine)
-
-title_select:
-	.byte STATE_ID::sys_GALLERY
-	.byte STATE_ID::sys_CREDITS
 
 .proc nmi_handler
 	pha
@@ -393,7 +387,7 @@ title_select:
 	sta sys_state
 
 	; start music with song id #0
-	lda #1
+	lda #0
 	jsr start_music
 	
 	jmp mainloop
@@ -439,6 +433,31 @@ title_select:
 	; something has gone terribly wrong.
 	jmp @end
 .endproc
+
+.proc credits_subroutine
+	lda sys_mode
+	and #sys_MODE_INITDONE
+	bne @skip_init
+	; load screen, tileset, nametable, and palettes associated
+	jsr credits_init
+	rts
+
+@skip_init:
+	rts
+.endproc
+
+.proc credits_init
+	lda #2
+	jsr start_music
+	lda sys_mode
+	ora #sys_MODE_INITDONE
+	sta sys_mode
+	rts
+.endproc
+
+title_select:
+	.byte STATE_ID::sys_GALLERY
+	.byte STATE_ID::sys_CREDITS
 
 .proc title_subroutine
 	lda sys_mode
@@ -512,7 +531,9 @@ title_select:
 	sta OAM_SHADOW_2,x
 	inx
 	bne @clear_OAM
-	lda #0
+	; hackfix: since gallery mode recalls the init routine, we set music here in advance
+	; if in credits, this will be overriden anyway
+	lda #1
 	jsr start_music
 
 @skip:
@@ -528,9 +549,6 @@ title_select:
 	sta PPUCTRL
 	lda #NAMETABLE_A
 	jsr load_titlescreen
-
-	lda #NAMETABLE_A
-	jsr set_title_nametable
 
 	; let the NMI handler know that we're done initializing
 	; let the NMI handler know that we're fading in
@@ -825,10 +843,6 @@ gallery_right:
 	lda s_PPUMASK
 	sta PPUMASK
 
-	rts
-.endproc
-
-.proc credits_subroutine
 	rts
 .endproc
 

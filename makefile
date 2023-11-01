@@ -21,7 +21,7 @@ version = 0.0.1
 objlist = header action53 main pads graphics donut music bhop
 
 # image files
-imglist = img_0 img_1
+imglist = img_0 img_1 img_3
 
 
 AS65 = ca65 $(CFLAGS65)
@@ -149,9 +149,6 @@ $(objdir)/music.asm: $(musdir)/music.asm
 
 # Rules for CHR data
 
-$(objdir)/%.bmp: $(imgdir)/%.bmp
-	cp $< $@
-
 # prepare input bitmaps
 # ensure the bmp 2 donut pipeline is preserved
 $(objdir)/img_index.s: \
@@ -161,8 +158,6 @@ $(objdir)/img_index.s: \
 	$(imgattrlistmac)
 	$(PY) tools/img_index.py --input_images $(imglist) --obj_dir $(objdir)
 
-
-
 $(imgbankscmplistmac): $(imgbankschrlistmac)
 $(imgbankschrlistmac): $(imgbanksbmplistmac) $(imgmiscsrclistmac)
 	$(PY) tools/savtool.py \
@@ -171,6 +166,7 @@ $(imgbankschrlistmac): $(imgbanksbmplistmac) $(imgmiscsrclistmac)
 	--write-chr 0 --chr4kpage-only $(basename $@).bmp $@
 
 # exception for bank_s
+# todo: automate generation of bank_s.bmp
 $(objdir)/%/bank_s.donut: $(objdir)/%/bank_s.chr
 $(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
 	$(PY) tools/pilbmp2nes.py $< $@
@@ -178,7 +174,6 @@ $(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
 $(imgbanksbmplistmac): $(imgbanksrawlistmac)
 $(imgbanksrawlistmac): $(imgbmprawlistmac)
 $(imgbmprawlistmac):
-	cp $(imgdir)/$@ $(objdir)/$@
 	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
 
 # prepare attribute tables
@@ -193,12 +188,11 @@ $(imgmiscsrclistmac): $(imgmiscrawlistmac)
 $(imgmiscrawlistmac):
 	cp $(imgdir)/$@.s $(objdir)/$@.s
 
-# donut is under GPL v3, so we just import it via git submodule
-$(objdir)/%.donut: $(objdir)/%.chr tools/external/action53/tools/donut$(DOTEXE)
-	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
+$(objdir)/%.donut: $(objdir)/%.chr tools/donut/donut-nes$(DOTEXE)
+	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
 
-tools/external/action53/tools/donut$(DOTEXE):
-	cd tools/external/action53 && $(MAKE) tools/donut$(DOTEXE)
+$(objdir)/%_nam.donut: $(objdir)/%.nam tools/donut/donut-nes$(DOTEXE)
+	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
 
 # Rules for directories
 
@@ -208,13 +202,16 @@ $(make_dirs):
 
 # Rules for external tools
 
+tools/donut/donut-nes$(DOTEXE): tools/donut/donut-nes.c
+	gcc -O2 -std=c99 -DUSE_MAIN_CLI_APP -o $@ $<
+
 
 
 # Rules that require secondary expansion:
 .SECONDEXPANSION:
 
 # use savtool to generate attribute tables
-$(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(objdir)/$$*/$$*.bmp $$(dir $$@)/pal.s
+$(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(imgdir)/$$*/$$*.bmp $$(dir $$@)/pal.s
 	$(PY) tools/savtool.py \
 	--palette=`grep '\.byte' $(dir $@)pal.s | \
 	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
@@ -222,19 +219,13 @@ $(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(objdir)/$$*/$$*.bmp $$(dir $$@)
 
 # special handling for title card and universal palette/tiles
 
-$(objdir)/img_title/bank_0.donut: $(objdir)/img_title/bank_0.chr
-	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
-
-$(objdir)/img_title/img_title_nam.donut: $(objdir)/img_title/img_title.nam
-	tools/external/action53/tools/donut$(DOTEXE) -fq $< $@
-
 $(objdir)/img_title/bank_0.chr: $(objdir)/img_title/img_title.sav
 	$(PY) tools/savtool.py $< $@
 
 $(objdir)/img_title/img_title.nam: $(objdir)/img_title/img_title.sav
 	$(PY) tools/savtool.py $< $@
 
-$(objdir)/img_title/img_title.sav: $(objdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
+$(objdir)/img_title/img_title.sav: $(imgdir)/img_title/img_title.bmp $(objdir)/universal_pal.s
 	$(PY) tools/savtool.py \
 	--palette=`grep '\.byte' $(objdir)/universal_pal.s | \
 	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` $< $@
