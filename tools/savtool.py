@@ -736,11 +736,14 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False, 
     palettes = [[palettes[0]] + palettes[i + 1:i + 4]
                 for i in range(0, 16, 4)]
 
-    if (w != 256 or h != 240) and not chr4kpageonly:
+    if (w != 256 or h != 240):
         i2 = Image.new("RGB", (256, 240), palettes[0][0])
         i2.paste(im, ((256 - w) // 2, (240 - h) // 2))
         im = i2
     (imf, attrs) = colorround(im, palettes)
+    if chr4kpageonly:
+        i2 = imf.crop(((256 - w) // 2, (240 - h) // 2, (256 + w) // 2, (240 + h) // 2))
+        imf = i2
     if len(attrs) % 2:
         attrs.append([0] * len(attrs[0]))
     if not attronly:
