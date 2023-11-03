@@ -23,6 +23,7 @@ import argparse
 parser = argparse.ArgumentParser(description="generate label linking information for image list.")
 parser.add_argument("--input_images", type=str, help="input image names", nargs="+")
 parser.add_argument("--obj_dir", type=str, help="object directory")
+parser.add_argument("-v", "--verbose", action="store_true", help="enable verbose logs")
 
 args = parser.parse_args()
 bank_size = 2**14
@@ -48,10 +49,11 @@ def increment_bank_size(size):
     img_index_ptr += size
     img_index_size -= size
 
-    print("blob size: {0}".format(size))
-    print("bank number: {0}".format(img_index_bank))
-    print("bank size remaining: {0}".format((bank_size) - img_index_ptr))
-    print("total size remaining: {0}\n".format(img_index_size))
+    if args.verbose:
+        print("blob size: {0}".format(size))
+        print("bank number: {0}".format(img_index_bank))
+        print("bank size remaining: {0}".format((bank_size) - img_index_ptr))
+        print("total size remaining: {0}\n".format(img_index_size))
 
 
 def check_file_size(file_path):

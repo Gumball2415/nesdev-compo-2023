@@ -159,11 +159,14 @@ $(objdir)/img_index.s: \
 	$(PY) tools/img_index.py --input_images $(imglist) --obj_dir $(objdir)
 
 $(imgbankscmplistmac): $(imgbankschrlistmac)
-$(imgbankschrlistmac): $(imgbanksbmplistmac) $(imgmiscsrclistmac)
-	$(PY) tools/savtool.py \
-	--palette=`grep '\.byte' $(dir $@)pal.s | \
-	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
-	--write-chr 0 --chr4kpage-only $(basename $@).bmp $@
+$(imgbankschrlistmac): $(imgbanksbmplistmac)
+$(imgbanksbmplistmac): $(imgbanksrawlistmac)
+$(imgbanksrawlistmac): $(imgbmprawlistmac)
+$(imgbmprawlistmac):  $(imgmiscsrclistmac)
+	$(PY) tools/preprocess_bmp.py \
+	$(imgdir)/$@ $(dir $(objdir)/$@) \
+	--palette=`grep '\.byte' $(dir $(objdir)/$@)pal.s | \
+	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32`
 
 # exception for bank_s
 # todo: automate generation of bank_s.bmp
@@ -171,17 +174,9 @@ $(objdir)/%/bank_s.donut: $(objdir)/%/bank_s.chr
 $(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
 	$(PY) tools/pilbmp2nes.py $< $@
 
-$(imgbanksbmplistmac): $(imgbanksrawlistmac)
-$(imgbanksrawlistmac): $(imgbmprawlistmac)
-$(imgbmprawlistmac):
-	$(PY) tools/preprocess_bmp.py $(imgdir)/$@ $(dir $(objdir)/$@)
-
 # prepare attribute tables
 $(imgattrlistmac): $(imgpartialnamlistmac)
-$(imgpartialnamlistmac): $(imgbmprawlistmac) $(imgmiscsrclistmac)
-
-$(imgattrlistmac): $(objdir)/%/attr.bin: $(objdir)/%/attr.nam
-	tail -c +961 $< > $@
+$(imgpartialnamlistmac): $(imgbmprawlistmac)
 
 # prepare auxilliary data
 $(imgmiscsrclistmac): $(imgmiscrawlistmac)
@@ -209,13 +204,6 @@ tools/donut/donut-nes$(DOTEXE): tools/donut/donut-nes.c
 
 # Rules that require secondary expansion:
 .SECONDEXPANSION:
-
-# use savtool to generate attribute tables
-$(imgpartialnamlistmac): $(objdir)/%/attr.nam: $(imgdir)/$$*/$$*.bmp $$(dir $$@)/pal.s
-	$(PY) tools/savtool.py \
-	--palette=`grep '\.byte' $(dir $@)pal.s | \
-	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32` \
-	--attr-only $< $@
 
 # special handling for title card and universal palette/tiles
 
