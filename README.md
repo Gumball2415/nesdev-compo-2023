@@ -31,6 +31,21 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 		- licensed under the MIT license. Copyright 2023 zeta0134.
 	- `nrom_template`
 		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
+- ### Art & Artists
+	- `NesDev` Discord Server Icon
+		- logotype by tokumaru
+		- design by Persune
+	- Electric Space
+		- pixel art by Lockster
+	- Minae Zooming By
+		- line art and coloring by forple
+		- pixel rasterization/digitization by Persune
+		- attribute overlay assistance by Kasumi
+	- Dagga Says Cheese!
+		- line art by yoeynsf
+		- pixel rasterization/digitization by Persune
+		- color consulting by Cobalt Teal
+		- attrribute overlay layout by Kagamiin~
 
 ## Compiling
 

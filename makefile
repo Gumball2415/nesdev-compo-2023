@@ -102,7 +102,7 @@ imgmiscsrclistmac = $(foreach o,$(imgmiscrawlistmac),$(objdir)/$(o).s)
 imgattrlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.bin)
 imgpartialnamlistmac = $(foreach o, $(imglist),$(objdir)/$(o)/attr.nam)
 
-imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2)
+imgbanksrawlistmac = $(foreach o,$(imglist),$(o)/bank_0 $(o)/bank_1 $(o)/bank_2 $(o)/bank_s)
 imgbankscmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).donut)
 imgbankschrlistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).chr)
 imgbanksbmplistmac = $(foreach o,$(imgbanksrawlistmac),$(objdir)/$(o).bmp)
@@ -158,6 +158,11 @@ $(objdir)/img_index.s: \
 	$(imgattrlistmac)
 	$(PY) tools/img_index.py --input_images $(imglist) --obj_dir $(objdir)
 
+# attribute table dependencies
+$(imgattrlistmac): $(imgpartialnamlistmac)
+$(imgpartialnamlistmac): $(imgbmprawlistmac)
+
+# prepare 3 banks and attribute tables
 $(imgbankscmplistmac): $(imgbankschrlistmac)
 $(imgbankschrlistmac): $(imgbanksbmplistmac)
 $(imgbanksbmplistmac): $(imgbanksrawlistmac)
@@ -168,20 +173,16 @@ $(imgbmprawlistmac):  $(imgmiscsrclistmac)
 	--palette=`grep '\.byte' $(dir $(objdir)/$@)pal.s | \
 	sed -Ez 's/\s*\.byte (\S*)\s*/\1/g;s/[\$$,]//g;s/\n/ /g' | head -c 32`
 
-# exception for bank_s
-# todo: automate generation of bank_s.bmp
-$(objdir)/%/bank_s.donut: $(objdir)/%/bank_s.chr
-$(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
-	$(PY) tools/pilbmp2nes.py $< $@
-
-# prepare attribute tables
-$(imgattrlistmac): $(imgpartialnamlistmac)
-$(imgpartialnamlistmac): $(imgbmprawlistmac)
-
 # prepare auxilliary data
 $(imgmiscsrclistmac): $(imgmiscrawlistmac)
 $(imgmiscrawlistmac):
 	cp $(imgdir)/$@.s $(objdir)/$@.s
+
+# conversion exception for bank_s
+# todo: automate generation of bank_s.bmp
+$(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
+	$(PY) tools/pilbmp2nes.py $< $@
+
 
 $(objdir)/%.donut: $(objdir)/%.chr tools/donut/donut-nes$(DOTEXE)
 	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
