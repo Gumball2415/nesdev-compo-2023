@@ -714,7 +714,7 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None):
     (imf, attrs) = colorround(im, palettes)
     if len(attrs) % 2:
         attrs.append([0] * len(attrs[0]))
-    sav = bitmap_to_sav(imf)
+    sav = bitmap_to_sav(imf, max_tiles=max_tiles)
     attrs = [[row[i] | (row[i + 1] << 2) for i in range(0, 16, 2)]
              for row in attrs]
     attrs = [bytes(tc | (bc << 4) for (tc, bc) in zip(t, b))

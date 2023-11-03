@@ -41,8 +41,16 @@ refpal = bytes.fromhex(
 )
 refpal = [refpal[i:i + 3]
           for i in range(0, len(refpal), 3)]
+"""
+overriden savtool.py functions
+modifications by by Kagamiin~:
+- Fixed bug with max_tiles argument not being honored properly
+- Added option to generate only attribute table, skipping CHR and tile data for fast execution
 
-# override savtool.py functions
+modifications by Persune:
+- Add option to write unoptimized deduplicated 3 bank tileset
+"""
+
 def render_tilesheet(chrdata, colorset):
     from savtool import texels_to_pil, chrbank_to_texels
     palette = args.palette
@@ -84,10 +92,8 @@ def load_bitmap_with_palette(filename, palette, max_tiles=None, attronly=False, 
             i2.paste(imbot, (0, 240 - 24))
             (w, h) = i2.size
         im = i2
-        im.save(args.output_dir+"/im.bmp", "BMP")
         
     (imf, attrs) = colorround(im, palettes)
-    imf.save(args.output_dir+"/imf.bmp", "BMP")
     if len(attrs) % 2:
         attrs.append([0] * len(attrs[0]))
     if chrout:
@@ -135,7 +141,6 @@ else:
 # Load image
 with Image.open(args.input_image) as image:
     image_filepath, image_filename = os.path.split(args.input_image)
-    print("processing {0}...".format(args.input_image))
 
     if (image.size != (256, 192)):
         sys.exit("error: {0} is not 256x192".format(args.input_image))
