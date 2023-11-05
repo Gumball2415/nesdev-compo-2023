@@ -6,6 +6,10 @@
 
 ; TODO: clean this up. curse you ca65!!!
 
+STAR_TILE = $04
+MAIN_ROUTINES_BANK = 2
+BHOP_MUSIC_DATA_BANK = 1
+
 ; global zeropage stuff
 .globalzp temp1_8
 .globalzp temp2_8

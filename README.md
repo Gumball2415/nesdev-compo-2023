@@ -23,14 +23,15 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 	- Donut
 		- licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
 	- `savtool.py`
-		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick
-		- Modifications by Persune and Kagamiin~ are licensed under the MIT-0 license.
+		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick.
 	- `pilbmp2nes.py`
-		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick
+		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick.
+	- `preprocess_bmp.py`
+		- licensed under the MIT-0 license. Copyright 2023 Persune and Kagamiin~.
 	- Action53 mapper configuration and mapper helper functions
 		- licensed under the MIT license. Copyright 2023 zeta0134.
 	- `nrom_template`
-		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
+		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick.
 - ### Art & Artists
 	- `NesDev` Discord Server Icon
 		- logotype by tokumaru
@@ -41,11 +42,21 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 		- line art and coloring by forple
 		- pixel rasterization/digitization by Persune
 		- attribute overlay assistance by Kasumi
-	- Dagga Says Cheese!
+	- Dagga Says Cheese <:3 )~
 		- line art by yoeynsf
 		- pixel rasterization/digitization by Persune
 		- color consulting by Cobalt Teal
 		- attrribute overlay layout by Kagamiin~
+- ### Special thanks:
+	- yoeynsf
+	- forple
+	- Lockster
+	- Kagamiin~
+	- Fiskbit
+	- lidnariq
+	- zeta0134
+	- PinoBatch
+	- jekuthiel
 
 ## Compiling
 

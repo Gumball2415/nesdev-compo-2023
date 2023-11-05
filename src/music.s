@@ -5,7 +5,7 @@
 .segment "ZEROPAGE"
 music_is_playing:  .res 1
 
-.segment "PRG2_8000"
+.segment "PRG1_8000"
 
 bhop_music_data:
 	.scope music_data
@@ -19,7 +19,7 @@ bhop_music_data:
 ; @param A song index within the module
 .proc start_music
 	tax
-	a53_set_prg_safe #2
+	a53_set_prg_safe #BHOP_MUSIC_DATA_BANK
 	txa
 	jsr bhop_init
 	lda #1
@@ -35,10 +35,10 @@ bhop_music_data:
 	beq @skip
 	lda s_A53_MUTEX
 	bne @skip
-	a53_set_prg #2
+	a53_set_prg_safe #BHOP_MUSIC_DATA_BANK
 	
 	jsr bhop_play
-	a53_set_prg s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
 @skip:
 	rts
 .endproc

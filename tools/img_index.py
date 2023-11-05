@@ -20,6 +20,8 @@ import sys
 import os
 import argparse
 
+# TODO: sort chunks
+
 parser = argparse.ArgumentParser(description="generate label linking information for image list.")
 parser.add_argument("--input_images", type=str, help="input image names", nargs="+")
 parser.add_argument("--obj_dir", type=str, help="object directory")
@@ -78,25 +80,21 @@ def place_asm_chunk(obj_dir, input_img, file_path):
     img_index_s_txt += "\t{0}_{1}:\n\t\t.include \"../{3}/{0}/{2}\"\n".format(input_img, os.path.splitext(file_path)[0], file_path, obj_dir)
     check_file_size("{0}/{1}/{2}".format(obj_dir, input_img, file_path))
 
-# we assume that the universal palette and the image title is already included
-# universal_tileset:
-	# .incbin "../obj/universal.donut"
-check_file_size("{0}/universal.donut".format(args.obj_dir))
-# universal_pal:
-	# .include "../obj/universal_pal.s"
-increment_bank_size(32)
+print_bank_split()
 
+# ; title image is exception
 # img_title_nam:
-	# .incbin "../obj/img_title/img_title_nam.donut"
-check_file_size("{0}/img_title/img_title_nam.donut".format(args.obj_dir))
+	# .incbin "../obj/img_title/nam.donut"
 # img_title_oam:
 	# .include "../obj/img_title/oam.s"
-check_file_size("{0}/img_title/oam.s".format(args.obj_dir))
 # img_title_bank_0:
 	# .incbin "../obj/img_title/bank_0.donut"
-check_file_size("{0}/img_title/bank_0.donut".format(args.obj_dir))
-
-print_bank_split()
+img_index_s_txt += "\t{0}_{1}:\n\t\t.incbin \"../{3}/{0}/{1}{2}\"\n".format("img_title", "nam", ".donut", args.obj_dir)
+check_file_size("{3}/{0}/{1}{2}".format("img_title", "nam", ".donut", args.obj_dir))
+img_index_s_txt += "\t{0}_{1}:\n\t\t.include \"../{3}/{0}/{1}{2}\"\n".format("img_title", "oam", ".s", args.obj_dir)
+check_file_size("{3}/{0}/{1}{2}".format("img_title", "oam", ".s", args.obj_dir))
+img_index_s_txt += "\t{0}_{1}:\n\t\t.incbin \"../{3}/{0}/{1}{2}\"\n".format("img_title", "bank_0", ".donut", args.obj_dir)
+check_file_size("{3}/{0}/{1}{2}".format("img_title", "bank_0", ".donut", args.obj_dir))
 
 for input_img in args.input_images:
     # <img>_pal:
@@ -122,6 +120,39 @@ for input_img in args.input_images:
     place_data_chunk(args.obj_dir, input_img, "bank_s.donut")
 
 img_index_s_txt += ".segment \"PRGFIXED_C000\"\n"
+
+# img_title:
+	# .addr universal_pal
+	# .addr img_title_nam
+	# .addr img_title_oam
+	# .addr img_title_bank_0
+	# .addr img_title_bank_0
+	# .addr img_title_bank_0
+	# .addr img_title_bank_0
+	# .byte <.bank(universal_pal)
+	# .byte <.bank(img_title_nam)
+	# .byte <.bank(img_title_oam)
+	# .byte <.bank(img_title_bank_0)
+	# .byte <.bank(img_title_bank_0)
+	# .byte <.bank(img_title_bank_0)
+	# .byte <.bank(universal_tileset)
+
+img_index_s_txt += "\t{0}:\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_pal\n".format("universal")
+img_index_s_txt += "\t\t.addr {0}_nam\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_oam\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_bank_0\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_bank_0\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_bank_0\n".format("img_title")
+img_index_s_txt += "\t\t.addr {0}_tileset\n".format("universal")
+img_index_s_txt += "\t\t.byte <.bank({0}_pal)\n".format("universal")
+img_index_s_txt += "\t\t.byte <.bank({0}_nam)\n".format("img_title")
+img_index_s_txt += "\t\t.byte <.bank({0}_oam)\n".format("img_title")
+img_index_s_txt += "\t\t.byte <.bank({0}_bank_0)\n".format("img_title")
+img_index_s_txt += "\t\t.byte <.bank({0}_bank_0)\n".format("img_title")
+img_index_s_txt += "\t\t.byte <.bank({0}_bank_0)\n".format("img_title")
+img_index_s_txt += "\t\t.byte <.bank({0}_tileset)\n".format("universal")
+
 for input_img in args.input_images:
     # <img>:
     img_index_s_txt += "\t{0}:\n".format(input_img)

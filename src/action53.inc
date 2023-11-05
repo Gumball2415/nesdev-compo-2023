@@ -64,8 +64,7 @@ A53_PRG_OUTER_BANK_256K      =   %00110000
 .macro a53_set_prg_safe bank_number
         inc s_A53_MUTEX
         a53_write A53_REG_INNER_BANK, bank_number
-        sta s_A53_PRG_BANK
-	dec s_A53_MUTEX
+        dec s_A53_MUTEX
 .endmacro
 
 ; note: we use vertical mirroring, so we won't bother to set the

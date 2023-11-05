@@ -2,6 +2,8 @@
 .ifndef SYSTEM_INC
 .define SYSTEM_INC
 
+.charmap $20, $00
+
 .enum STATE_ID
 	sys_TITLE
 	sys_GALLERY
@@ -27,7 +29,6 @@ sys_MODE_PALETTEFADE = %00100000
 sys_MODE_SPRITE0SET  = %01000000
 sys_MODE_NMIOCCURRED = %10000000
 
-
 .struct img_DATA_PTR
 	; PTR: pointer to data
 	; LOC: PRG bank number which it resides in
@@ -47,4 +48,12 @@ sys_MODE_NMIOCCURRED = %10000000
 	img_BANK_2_LOC .byte
 	img_BANK_S_LOC .byte
 .endstruct
+
+.struct txt_DATA_PTR
+	; PTR: pointer to data
+	; LOC: PRG bank number which it resides in
+	txt_LOC .byte
+	txt_PTR .addr
+.endstruct
+
 .endif

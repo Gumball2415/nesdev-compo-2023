@@ -24,45 +24,21 @@ img_progress:   .res 1
 img_index:      .res 1
 img:            .tag img_DATA_PTR
 
-.segment "PRG0_8000"
+.include "../obj/img_index.s"
+
+.segment "PRGFIXED_C000"
+
 universal_tileset:
 	.incbin "../obj/universal.donut"
 universal_pal:
 	.include "../obj/universal_pal.s"
-
-; title image is exception
-img_title_nam:
-	.incbin "../obj/img_title/img_title_nam.donut"
-img_title_oam:
-	.include "../obj/img_title/oam.s"
-img_title_bank_0:
-	.incbin "../obj/img_title/bank_0.donut"
-
-.include "../obj/img_index.s"
-
-.segment "PRGFIXED_C000"
-img_title:
-	.addr universal_pal
-	.addr img_title_nam
-	.addr img_title_oam
-	.addr img_title_bank_0
-	.addr img_title_bank_0
-	.addr img_title_bank_0
-	.addr img_title_bank_0
-	.byte <.bank(universal_pal)
-	.byte <.bank(img_title_nam)
-	.byte <.bank(img_title_oam)
-	.byte <.bank(img_title_bank_0)
-	.byte <.bank(img_title_bank_0)
-	.byte <.bank(img_title_bank_0)
-	.byte <.bank(universal_tileset)
 
 ; sprite 0 hit happens precisely on this pixel
 titlescreen_sprite0_data:
 	.byte $76, $FF, $01, $E3 ; sprite 0
 	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
 titlescreen_sprite1_data:
-	.byte $98, $04, $00, $58 ; star sprite
+	.byte $98, STAR_TILE, $00, $58 ; star sprite
 	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
 gallery_sprite0_data:
 	.byte $4E, $FF, $00, $F8
@@ -682,9 +658,8 @@ loop2:
 	rts
 .endproc
 
-.charmap $20, $00
 txt_now_loading:
-	.byte "now loading... ", $04
+	.byte "now loading... ", STAR_TILE
 	txt_now_loading_size := * - txt_now_loading
 ;;
 ; sets the nametable for gallery view

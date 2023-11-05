@@ -18,7 +18,7 @@ version = 0.0.1
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = header action53 main pads graphics donut music bhop
+objlist = main bhop music header action53 pads graphics donut credits
 
 # image files
 imglist = img_0 img_1 img_3
@@ -135,7 +135,7 @@ $(objdir)/music.o: $(objdir)/music.asm
 $(objdir)/graphics.o: \
 	$(objdir)/img_title/bank_0.donut \
 	$(objdir)/img_title/oam.s \
-	$(objdir)/img_title/img_title_nam.donut \
+	$(objdir)/img_title/nam.donut \
 	$(objdir)/universal.donut \
 	$(objdir)/universal_pal.s \
 	$(objdir)/img_index.s
@@ -187,9 +187,6 @@ $(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
 $(objdir)/%.donut: $(objdir)/%.chr tools/donut/donut-nes$(DOTEXE)
 	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
 
-$(objdir)/%_nam.donut: $(objdir)/%.nam tools/donut/donut-nes$(DOTEXE)
-	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
-
 # Rules for directories
 
 $(make_dirs):
@@ -210,6 +207,9 @@ tools/donut/donut-nes$(DOTEXE): tools/donut/donut-nes.c
 
 $(objdir)/img_title/bank_0.chr: $(objdir)/img_title/img_title.sav
 	$(PY) tools/savtool.py $< $@
+
+$(objdir)/img_title/nam.donut: $(objdir)/img_title/img_title.nam tools/donut/donut-nes$(DOTEXE)
+	tools/donut/donut-nes$(DOTEXE) -f -q -v $< $@
 
 $(objdir)/img_title/img_title.nam: $(objdir)/img_title/img_title.sav
 	$(PY) tools/savtool.py $< $@
