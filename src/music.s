@@ -5,7 +5,7 @@
 .segment "ZEROPAGE"
 music_is_playing:  .res 1
 
-.segment "PRG1_8000"
+.segment BHOP_MUSIC_DATA_BANK_SEGMENT
 
 bhop_music_data:
 	.scope music_data
