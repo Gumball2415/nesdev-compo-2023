@@ -75,6 +75,9 @@ credits_line: .tag txt_DATA_PTR
 
 credits_text:
 ; txtmacro  TXT_type, "============================"
+txtmacro TXT_HEADING, "       project SHVTERA"
+txtmacro TXT_REGULAR, "a proof-of-concept slideshow"
+txtmacro TXT_REGULAR, ""
 txtmacro TXT_HEADING, "Main programming:"           
 txtmacro TXT_REGULAR, "  - Kagamiin~"               
 txtmacro TXT_REGULAR, "  - Persune"                 
