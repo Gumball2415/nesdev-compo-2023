@@ -1,3 +1,6 @@
 [submodule "tools/external/action53"]
 	path = tools/external/action53
 	url = https://github.com/pinobatch/action53.git
+[submodule "tools/dpcm-tools"]
+	path = tools/dpcm-tools
+	url = https://github.com/zeta0134/dpcm-tools.git

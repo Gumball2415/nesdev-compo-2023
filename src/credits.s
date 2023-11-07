@@ -190,6 +190,7 @@ credits_text_size := * - credits_text
 
 ;
 ; prints text to the nametable location specifed
+; @param
 .proc print_line
 	lda z:credits_line+txt_DATA_PTR::txt_LOC
 	rts

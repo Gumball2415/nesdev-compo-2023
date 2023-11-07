@@ -1,1 +1,1 @@
-looper.py -i asymmbass.fti --prefix ab -w "acid raw.wav" -v 1 -e 0.01 -b -45 --fullname "asymmetric bass" c2-c3
+..\tools\dpcm-tools\looper.py -i asymmbass.fti --prefix ab -w "acid raw.wav" -v 1 -e 0.01 -b -60 --fullname "asymmetric bass" c2-c3
