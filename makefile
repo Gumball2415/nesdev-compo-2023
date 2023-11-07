@@ -18,7 +18,7 @@ version = 0.0.1
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = main bhop music header action53 pads graphics donut credits
+objlist = main title gallery credits header action53 pads graphics donut bhop music
 
 # image files
 imglist = img_0 img_1 img_3

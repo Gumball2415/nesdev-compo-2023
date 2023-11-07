@@ -82,6 +82,17 @@ def place_asm_chunk(obj_dir, input_img, file_path):
 
 print_bank_split()
 
+
+
+# universal_tileset:
+	# .incbin "../obj/universal.donut"
+# universal_pal:
+	# .include "../obj/universal_pal.s"
+img_index_s_txt += "\t{0}_{1}:\n\t\t.incbin \"../{3}/{0}{2}\"\n".format("universal", "tileset", ".donut", args.obj_dir)
+check_file_size("{2}/{0}{1}".format("universal", ".donut", args.obj_dir))
+img_index_s_txt += "\t{0}_{1}:\n\t\t.include \"../{3}/{0}_{1}{2}\"\n".format("universal", "pal", ".s", args.obj_dir)
+check_file_size("{3}/{0}_{1}{2}".format("universal", "pal", ".s", args.obj_dir))
+
 # ; title image is exception
 # img_title_nam:
 	# .incbin "../obj/img_title/nam.donut"

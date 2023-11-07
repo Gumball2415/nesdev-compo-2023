@@ -27,12 +27,12 @@
 .exportzp donut_stream_ptr
 .import sync_ppuaddr_ptr, inc_ppuaddr_ptr
 
-.segment "STACKRAM"
-donut_block_buffer: .res 64
 .segment "ZEROPAGE"
+
 donut_stream_ptr:       .res 2
 donut_block_count:      .res 1
 temp:                   .res 16  ; 16 bytes are used
+donut_block_buffer:		.res 64
 
 .segment "PRGFIXED_C000"
 ;;

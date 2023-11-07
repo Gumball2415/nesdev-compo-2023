@@ -6,8 +6,18 @@
 
 ; TODO: clean this up. curse you ca65!!!
 
+; flags
+
+; waits for end of vblank before enabling rendering
+; scanline 0 is glitched
+SKIP_DOT_DISABLE = 1
+
+; constants
+
 STAR_TILE = $04
+.define MAIN_ROUTINES_BANK_SEGMENT "PRG2_8000"
 MAIN_ROUTINES_BANK = 2
+.define BHOP_MUSIC_DATA_BANK_SEGMENT "PRG1_8000"
 BHOP_MUSIC_DATA_BANK = 1
 
 ; global zeropage stuff

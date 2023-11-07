@@ -28,11 +28,6 @@ img:            .tag img_DATA_PTR
 
 .segment "PRGFIXED_C000"
 
-universal_tileset:
-	.incbin "../obj/universal.donut"
-universal_pal:
-	.include "../obj/universal_pal.s"
-
 ; sprite 0 hit happens precisely on this pixel
 titlescreen_sprite0_data:
 	.byte $76, $FF, $01, $E3 ; sprite 0
@@ -344,7 +339,9 @@ loop2:
 	bpl @copysprite0inoam2
 
 	; switch to universal palette
-	a53_set_prg_safe <.bank(universal_pal)
+	lda #<.bank(universal_pal)
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
 	lda #<universal_pal
 	ldx #>universal_pal
 	jsr load_ptr_temp1_16
