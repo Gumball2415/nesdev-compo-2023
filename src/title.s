@@ -4,10 +4,6 @@
 
 .export title_subroutine
 
-.segment "ZEROPAGE"
-
-mode_select: .res 1
-
 .segment MAIN_ROUTINES_BANK_SEGMENT
 
 .proc title_display_kernel_ntsc
@@ -40,6 +36,7 @@ title_select:
 	.byte STATE_ID::sys_CREDITS
 
 .proc title_subroutine
+mode_select = temp3_8
 	lda sys_mode
 	and #sys_MODE_INITDONE
 	bne @skip_init

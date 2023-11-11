@@ -23,8 +23,10 @@ STAR_TILE = $04
 ; global zeropage stuff
 .globalzp temp1_8
 .globalzp temp2_8
+.globalzp temp3_8
 .globalzp temp1_16
 .globalzp temp2_16
+.globalzp temp3_16
 .globalzp sys_state
 .globalzp sys_mode
 .globalzp nmis
@@ -33,7 +35,11 @@ STAR_TILE = $04
 .global reset_handler
 
 ; main.s
-.global main, nmi_handler, irq_handler, reset_handler, load_ptr_temp1_16
+.global main, nmi_handler, irq_handler, reset_handler
+.global load_ptr_temp1_16
+.global load_ptr_temp2_16
+.global load_ptr_temp3_16
+.global far_call_subroutine
 .global update_graphics, wait_x_frames
 .globalzp cur_keys, new_keys, oam_used, shadow_oam_ptr
 

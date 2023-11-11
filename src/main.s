@@ -22,6 +22,10 @@ program_table_hi:
 	.byte .hibyte(gallery_subroutine)
 	.byte .hibyte(credits_subroutine)
 
+.proc irq_handler
+	rti
+.endproc
+
 .proc nmi_handler
 	pha
 	tya
@@ -231,10 +235,6 @@ program_table_hi:
 	rts
 .endproc
 
-.proc irq_handler
-	rti
-.endproc
-
 .proc reset_handler
 	sei        ; ignore IRQs
 	cld        ; disable decimal mode
@@ -371,6 +371,7 @@ program_table_hi:
 	sta temp1_16+0
 	lda program_table_hi,x
 	sta temp1_16+1
+	a53_set_prg #MAIN_ROUTINES_BANK
 	jmp (temp1_16)
 
 @end:
@@ -394,6 +395,32 @@ program_table_hi:
 .endproc
 
 ;;
+; set pointer using A and X
+; this happens quite a lot, so it may save bytes
+; on just calling a subroutine instead
+; @param A: low byte of address
+; @param X: high byte of address
+; @param temp2_16: pointer variable
+.proc load_ptr_temp2_16
+	sta temp2_16+0
+	stx temp2_16+1
+	rts
+.endproc
+
+;;
+; set pointer using A and X
+; this happens quite a lot, so it may save bytes
+; on just calling a subroutine instead
+; @param A: low byte of address
+; @param X: high byte of address
+; @param temp3_16: pointer variable
+.proc load_ptr_temp3_16
+	sta temp3_16+0
+	stx temp3_16+1
+	rts
+.endproc
+
+;;
 ; wait X amount of frames
 ; note: NMI must be enabled
 .proc wait_x_frames
@@ -405,3 +432,45 @@ program_table_hi:
 	bne @wait_for_nmi
 	rts
 .endproc
+
+;;
+; far call routine in a different bank
+; we can't use temp1_16 because most routines use it as a pointer parameter
+; we can't use temp2_16 because interrupt proofing uses it as a PPUADDR tracker
+; clobbers A
+; @param temp1_8: A param of routine
+; @param temp3_8: bank of routine
+; @param temp3_16: pointer to routine
+.proc far_call_subroutine 
+	; push the current bank
+	lda s_A53_PRG_BANK
+	pha
+	; switch banks
+	a53_set_prg_safe temp3_8
+	; call to target
+
+	; simulate a JSR indirect
+	lda #>(far_call_subroutine_return-1)
+	pha
+	lda #<(far_call_subroutine_return-1)
+	pha
+	lda temp1_8
+	jmp (temp3_16)
+	; pull current bank
+far_call_subroutine_return:
+	pla
+	sta s_A53_PRG_BANK
+	; switch banks
+	a53_set_prg_safe s_A53_PRG_BANK
+	rts
+.endproc
+
+; TODO; self modifying implementation
+; ram: ; place in RAM
+  ; jmp $0000
+
+; lda #<dest
+; sta ram+1
+; lda #>dest
+; sta ram+2
+; jsr ram

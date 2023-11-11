@@ -19,11 +19,15 @@ bhop_music_data:
 ; @param A song index within the module
 .proc start_music
 	tax
+	lda s_A53_PRG_BANK
+	pha
 	a53_set_prg_safe #BHOP_MUSIC_DATA_BANK
 	txa
 	jsr bhop_init
 	lda #1
 	sta music_is_playing
+	pla
+	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
@@ -35,9 +39,14 @@ bhop_music_data:
 	beq @skip
 	lda s_A53_MUTEX
 	bne @skip
+	lda s_A53_PRG_BANK
+	pha
 	a53_set_prg_safe #BHOP_MUSIC_DATA_BANK
 	
 	jsr bhop_play
+
+	pla
+	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
 @skip:
 	rts

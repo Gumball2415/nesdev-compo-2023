@@ -70,6 +70,8 @@ TXT_HEADING = 1
 .segment "ZEROPAGE"
 
 credits_line: .tag txt_DATA_PTR
+y_scroll_pos: .res 2
+line_counter: .res 1
 
 .segment "PRG_CREDITS_LIST"
 
@@ -167,6 +169,33 @@ credits_text_size := * - credits_text
 
 .segment MAIN_ROUTINES_BANK_SEGMENT
 
+
+; TODO: how to do this on a scrolling screen?
+.proc credits_display_kernel_ntsc
+.if .not(::SKIP_DOT_DISABLE)
+	; delay until it's ok to poll for sprite 0
+	@wait_sprite0_reset:
+		bit PPUSTATUS
+		bvs @wait_sprite0_reset
+.endif
+
+	inc s_A53_MUTEX
+	; splitting the a53_write macro in half for timing reasons 1/2
+	lda #A53_REG_CHR_BANK
+	sta z:s_A53_REG_SELECT
+
+@wait_sprite0_hit:
+	bit PPUSTATUS
+	bvc @wait_sprite0_hit ; wait for sprite 0 hit
+	dec s_A53_MUTEX
+
+	; let update_graphics know that we have sprite0
+	lda sys_mode
+	ora #sys_MODE_SPRITE0SET
+	sta sys_mode
+	rts
+.endproc
+
 .proc credits_subroutine
 	lda sys_mode
 	and #sys_MODE_INITDONE
@@ -176,6 +205,7 @@ credits_text_size := * - credits_text
 	rts
 
 @skip_init:
+	; jsr credits_display_kernel_ntsc
 	rts
 .endproc
 
@@ -188,14 +218,7 @@ credits_text_size := * - credits_text
 	rts
 .endproc
 
-;
-; prints text to the nametable location specifed
-; @param
-.proc print_line
-	lda z:credits_line+txt_DATA_PTR::txt_LOC
-	rts
-.endproc
-
+.import print_line
 .proc load_credits_text
 	; sta temp2_8
 	; lda #<img_title

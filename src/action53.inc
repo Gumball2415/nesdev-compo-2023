@@ -59,11 +59,13 @@ A53_PRG_OUTER_BANK_256K      =   %00110000
 
 .macro a53_set_prg bank_number
         a53_write A53_REG_INNER_BANK, bank_number
+		sta s_A53_PRG_BANK
 .endmacro
 
 .macro a53_set_prg_safe bank_number
         inc s_A53_MUTEX
         a53_write A53_REG_INNER_BANK, bank_number
+		sta s_A53_PRG_BANK
         dec s_A53_MUTEX
 .endmacro
 
@@ -71,11 +73,13 @@ A53_PRG_OUTER_BANK_256K      =   %00110000
 ; mirroring mode bit here; it's ignored
 .macro a53_set_chr bank_number
         a53_write A53_REG_CHR_BANK, bank_number
+		sta s_A53_CHR_BANK
 .endmacro
 
 .macro a53_set_chr_safe bank_number
         inc s_A53_MUTEX
         a53_write A53_REG_CHR_BANK, bank_number
+		sta s_A53_CHR_BANK
         dec s_A53_MUTEX
 .endmacro
 

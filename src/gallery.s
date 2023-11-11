@@ -180,8 +180,17 @@ jump_table_hi:
 @check_right:
 	lda #KEY_RIGHT
 	bit new_keys
-	beq @skip
+	beq @check_b
 	jsr gallery_right
+	jmp @img_index_epilogue
+
+@check_b:
+	lda #KEY_B
+	bit new_keys
+	beq @skip
+	jsr gallery_exit
+	; TODO: on B press, exit back to title screen
+	jmp @skip
 
 @img_index_epilogue:
 	; fade out
@@ -244,6 +253,10 @@ gallery_right:
 	sta img_index
 
 @right_end:
+	rts
+
+
+gallery_exit:
 	rts
 .endproc
 

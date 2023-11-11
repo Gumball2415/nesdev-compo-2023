@@ -28,19 +28,7 @@ img:            .tag img_DATA_PTR
 
 .segment "PRGFIXED_C000"
 
-; sprite 0 hit happens precisely on this pixel
-titlescreen_sprite0_data:
-	.byte $76, $FF, $01, $E3 ; sprite 0
-	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
-titlescreen_sprite1_data:
-	.byte $98, STAR_TILE, $00, $58 ; star sprite
-	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
-gallery_sprite0_data:
-	.byte $4E, $FF, $00, $F8
-	gallery_sprite0_data_size := * - gallery_sprite0_data
-loadscreen_sprite0_data:
-	.byte $16, $FF, $00, $DF
-	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
+; these routines must absolutely stay on fixed bank
 
 ; copies the palette from shadow regs to PPU
 ; not interrupt safe!
@@ -194,9 +182,9 @@ loadscreen_sprite0_data:
 	bit PPUSTATUS
 	sta temp2_16+1
 	sta PPUADDR
-	ldy #0
-	sty temp2_16+0
-	sty PPUADDR
+	lda #0
+	sta temp2_16+0
+	sta PPUADDR
 	lda temp1_16+1
 	ldy temp1_16+0
 	ldx #4096/64
@@ -266,224 +254,6 @@ loop2:
 
 	dex
 	bne @loop
-
-	rts
-.endproc
-
-.proc clear_all_chr
-	a53_set_chr #0
-	jsr clear_chr
-	a53_set_chr #1
-	jsr clear_chr
-	a53_set_chr #2
-	jsr clear_chr
-	a53_set_chr #3
-	jsr clear_chr
-	a53_set_chr s_A53_CHR_BANK
-	rts
-.endproc
-
-;;
-; loads the bitmap image with palette and attribute table
-; @param A image index
-.proc load_chr_bitmap
-
-	; index into the image table
-	lda img_index
-	asl a
-	tax
-	lda img_table,x
-	sta temp1_16+0
-	lda img_table+1,x
-	sta temp1_16+1
-
-	ldy #0
-	sty img_progress
-	sty oam_size
-
-@ptr_load:
-	lda (temp1_16),y
-	sta img,y
-	iny
-	cpy #.sizeof(img_DATA_PTR)
-	bne @ptr_load
-	
-	; setup loading screen
-
-	; save current PRG and CHR bank
-	lda s_A53_PRG_BANK
-	pha
-	lda s_A53_CHR_BANK
-	pha
-
-	;set up sprite zero in OAM shadow buffers
-	lda #>OAM_SHADOW_1
-	sta shadow_oam_ptr+1
-	ldy #<gallery_sprite0_data_size
-	dey
-@copysprite0inoam1:
-	lda gallery_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	dey
-	bpl @copysprite0inoam1
-
-	lda #>OAM_SHADOW_2
-	sta shadow_oam_ptr+1
-	ldy #<loadscreen_sprite0_data_size
-	dey
-@copysprite0inoam2:
-	lda loadscreen_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	inc oam_size
-	dey
-	bpl @copysprite0inoam2
-
-	; switch to universal palette
-	lda #<.bank(universal_pal)
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda #<universal_pal
-	ldx #>universal_pal
-	jsr load_ptr_temp1_16
-	jsr transfer_img_pal
-
-	; override fade
-	lda pal_fade_amt
-	pha
-	lda #0
-	sta pal_fade_amt
-	jsr fade_shadow_palette
-	pla
-	sta pal_fade_amt
-
-	; bug NMI to load sprite0 and load screen palette
-	lda sys_mode
-	ora #sys_MODE_NMIPAL|sys_MODE_NMIOAM
-	sta sys_mode
-
-	; setup loading screen NMI
-	lda s_PPUCTRL
-	pha
-	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
-	sta PPUCTRL
-	sta s_PPUCTRL
-
-	; switch to universal CHR bank
-	a53_set_chr_safe #3
-
-	; wait until vblank to transfer image palettes
-	; this allows the ppu palette transfer flag to expire
-	; and thus only display the universal palette
-	ldx #1
-	jsr wait_x_frames
-
-	; transfer palettes, attributes, and OAM buffer
-	lda z:img+img_DATA_PTR::img_PAL_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_PAL_PTR
-	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
-	jsr load_ptr_temp1_16
-	jsr transfer_img_pal
-
-	lda z:img+img_DATA_PTR::img_ATTR_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_ATTR_PTR
-	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
-	jsr load_ptr_temp1_16
-	lda #NAMETABLE_A
-	jsr transfer_img_attr
-
-	lda z:img+img_DATA_PTR::img_OAM_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_OAM_PTR
-	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
-	jsr load_ptr_temp1_16
-	jsr transfer_img_oam
-
-	; transfer BG CHR banks
-	lda #0
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	lda z:img+img_DATA_PTR::img_BANK_0_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_0_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$00
-	jsr transfer_4k_chr
-	lda z:img+img_DATA_PTR::img_BANK_S_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_S_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
-
-	inc s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	lda z:img+img_DATA_PTR::img_BANK_1_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_1_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_1_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$00
-	jsr transfer_4k_chr
-	lda z:img+img_DATA_PTR::img_BANK_S_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_S_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
-
-	inc s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	lda z:img+img_DATA_PTR::img_BANK_2_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_2_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_2_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$00
-	jsr transfer_4k_chr
-	lda z:img+img_DATA_PTR::img_BANK_S_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_S_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$10
-	jsr transfer_4k_chr
-
-
-	; done with CHR transfer, begin to restore state
-
-	; bug system to load in new palettes
-	lda sys_mode
-	ora #sys_MODE_NMIPAL
-	sta sys_mode
-
-	; wait until vblank to restore state
-	ldx #1
-	jsr wait_x_frames
-
-	jsr fade_shadow_palette
-
-	pla
-	sta s_PPUCTRL
-	pla
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	pla
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
 
 	rts
 .endproc
@@ -655,66 +425,6 @@ loop2:
 	rts
 .endproc
 
-txt_now_loading:
-	.byte "now loading... ", STAR_TILE
-	txt_now_loading_size := * - txt_now_loading
-;;
-; sets the nametable for gallery view
-; @param A base address of nametable ($20, $24, $28, or $2C)
-.proc set_gallery_loading_screen
-	pha
-	; we don't really need to zero the nametable again
-	lda sys_mode
-	and #sys_MODE_GALLERYINIT
-	bne @skip_nametable_init
-
-	pla
-	pha
-	tax
-	lda #0
-	tay
-	jsr ppu_clear_nt
-
-@skip_nametable_init:
-	; draw text
-	pla
-	sta temp1_8
-	bit PPUSTATUS
-	sta PPUADDR
-	lda #$48
-	sta PPUADDR
-
-	lda #<txt_now_loading
-	ldx #>txt_now_loading
-	jsr load_ptr_temp1_16
-	lda #txt_now_loading_size
-	sta temp2_8
-	jsr draw_text
-
-	; draw loading bar
-	lda temp1_8
-	bit PPUSTATUS
-	sta PPUADDR
-	lda #$64
-	sta PPUADDR
-
-	lda #$05
-	sta PPUDATA
-	ldx #22
-	lda #$06
-
-@loop:
-    sta PPUDATA
-	dex
-	bne @loop
-
-	lda #$07
-	sta PPUDATA
-
-
-	rts
-.endproc
-
 ;;
 ; updates the loading progress bar
 ; @param A base address of nametable ($20, $24, $28, or $2C)
@@ -743,198 +453,31 @@ txt_now_loading:
 	rts
 .endproc
 
-; txt_gallery:
-	; .byte "gallery"
-	; txt_gallery_size := * - txt_gallery
-; txt_credits:
-	; .byte "credits"
-	; txt_credits_size := * - txt_credits
-; txt_shvtera_group:
-	; .byte "shvtera group ", $04
-	; txt_shvtera_group_size := * - txt_shvtera_group
-; txt_NesDev_2023:
-	; .byte $08,$09,$0A,$0B,$0C,$0D,$0E, " ", $10,$11,$12,$13
-	; txt_NesDev_2023_size := * - txt_NesDev_2023
-; ;;
-; ; sets the nametable for the title screen
-; ; @param A base address of nametable ($20, $24, $28, or $2C)
-; ; @param temp1_8 nametable high byte scratch pointer
-; .proc set_title_nametable
-	; sta temp1_8
-	
-	; ; set address to offset $026D
-	; ; draw option gallery text
-	; bit PPUSTATUS
-	; inc temp1_8
-	; inc temp1_8
-	; lda temp1_8
-	; sta PPUADDR
-	; lda #$6D
-	; sta PPUADDR
-	; lda #<txt_gallery
-	; ldx #>txt_gallery
-	; jsr load_ptr_temp1_16
-	; lda #txt_gallery_size
-	; sta temp2_8
-	; jsr draw_text
-	
-	; ; set address to offset $02AD
-	; ; draw option credits text
-	; lda temp1_8
-	; sta PPUADDR
-	; lda #$AD
-	; sta PPUADDR
-
-	; lda #<txt_credits
-	; ldx #>txt_credits
-	; jsr load_ptr_temp1_16
-	; lda #txt_gallery_size
-	; sta temp2_8
-	; jsr draw_text
-	
-	; ; set address to offset $0342
-	; ; draw shvtera text
-	; inc temp1_8
-	; lda temp1_8
-	; sta PPUADDR
-	; lda #$42
-	; sta PPUADDR
-
-	; lda #<txt_shvtera_group
-	; ldx #>txt_shvtera_group
-	; jsr load_ptr_temp1_16
-	; lda #txt_shvtera_group_size
-	; sta temp2_8
-	; jsr draw_text
-	
-	; ; set address to offset $0352
-	; ; draw nesdev text
-	; lda temp1_8
-	; sta PPUADDR
-	; lda #$52
-	; sta PPUADDR
-
-	; lda #<txt_NesDev_2023
-	; ldx #>txt_NesDev_2023
-	; jsr load_ptr_temp1_16
-	; lda #txt_NesDev_2023_size
-	; sta temp2_8
-	; jsr draw_text
-
-	; rts
-; .endproc
-
 ;;
-; sets the nametable for the title screen
-; @param A base address of nametable ($20, $24, $28, or $2C)
-.proc load_titlescreen
-	sta temp2_8
-	lda #<img_title
-	ldx #>img_title
-	jsr load_ptr_temp1_16
-
-	ldy #0
-	sty img_progress
-	sty oam_size
-
-@ptr_load:
-	lda (temp1_16),y
-	sta img,y
-	iny
-	cpy #.sizeof(img_DATA_PTR)
-	bne @ptr_load
-	
-	; setup loading screen
-
-	; save current PRG and CHR bank
+; prints text to the nametable location specifed
+; set PPUADDR before calling.
+; @param temp1_16 pointer to raw text data
+; @param temp1_8 bank of raw text data
+; @param temp2_8 0 = normal, 1 = heading text
+.proc print_line
+	; switch to raw text bank
 	lda s_A53_PRG_BANK
 	pha
-	lda s_A53_CHR_BANK
-	pha
+	a53_set_prg_safe temp1_8
 
-
-	; set sprite0 pixel
-	lda #>OAM_SHADOW_2
-	sta shadow_oam_ptr+1
-	lda #<titlescreen_sprite0_data
-	ldx #>titlescreen_sprite0_data
-	jsr load_ptr_temp1_16
-	ldx #<titlescreen_sprite0_data_size
-	jsr transfer_sprite
-
-	; set star sprite
-	lda #<titlescreen_sprite1_data
-	ldx #>titlescreen_sprite1_data
-	jsr load_ptr_temp1_16
-	ldx #<titlescreen_sprite1_data_size
-	jsr transfer_sprite
-
-	; transfer palettes, attributes, and OAM buffer
-	lda z:img+img_DATA_PTR::img_PAL_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_PAL_PTR
-	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
-	jsr load_ptr_temp1_16
-	jsr transfer_img_pal
-
-	; it says attribute, but really it points to nametable data
-	lda z:img+img_DATA_PTR::img_ATTR_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_ATTR_PTR
-	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
-	jsr load_ptr_temp1_16
-	lda temp2_8
-	jsr transfer_img_nam
-
-	; no OAM afaik?
-	lda z:img+img_DATA_PTR::img_OAM_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_OAM_PTR
-	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
-	jsr load_ptr_temp1_16
-	jsr transfer_img_oam
-
-	; transfer BG CHR bank
-	lda #3
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	lda z:img+img_DATA_PTR::img_BANK_0_LOC
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	lda z:img+img_DATA_PTR::img_BANK_0_PTR
-	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
-	jsr load_ptr_temp1_16
-	lda #$00
-	jsr transfer_4k_chr
-
-	lda sys_mode
-	ora #sys_MODE_NMIPAL
-	sta sys_mode
-
-	pla
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
-	pla
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-	rts
-.endproc
-
-;;
-; helper function to draw text. set PPUADDR before calling
-; @param temp2_8 size of raw text data
-; @param temp1_16 pointer to raw text data
-.proc draw_text
 	ldy #0
-@textprint_loop:
+@charprint_loop:
 	lda (temp1_16),y
+	bmi @end_of_line ; end loop if $FF is encountered
 	sta PPUDATA
 	iny
-	cpy temp2_8
-	bne @textprint_loop
+	jmp @charprint_loop
+
+@end_of_line:
+	; switch back to current bank
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
 
@@ -971,5 +514,419 @@ txt_now_loading:
 	inc img_progress
 
 @skip_inc:
+	rts
+.endproc
+
+.segment MAIN_ROUTINES_BANK_SEGMENT
+
+; sprite 0 hit happens precisely on this pixel
+titlescreen_sprite0_data:
+	.byte $76, $FF, $01, $E3 ; sprite 0
+	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
+titlescreen_sprite1_data:
+	.byte $98, STAR_TILE, $00, $58 ; star sprite
+	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
+gallery_sprite0_data:
+	.byte $4E, $FF, $00, $F8
+	gallery_sprite0_data_size := * - gallery_sprite0_data
+loadscreen_sprite0_data:
+	.byte $16, $FF, $00, $DF
+	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
+
+txt_now_loading:
+	.byte "now loading... ", STAR_TILE, $FF
+	txt_now_loading_size := * - txt_now_loading
+
+;;
+; loads the bitmap image with palette and attribute table
+; @param A image index
+.proc load_chr_bitmap
+
+	; index into the image table
+	lda img_index
+	asl a
+	tax
+	lda img_table,x
+	sta temp1_16+0
+	lda img_table+1,x
+	sta temp1_16+1
+
+	ldy #0
+	sty img_progress
+	sty oam_size
+
+@ptr_load:
+	lda (temp1_16),y
+	sta img,y
+	iny
+	cpy #.sizeof(img_DATA_PTR)
+	bne @ptr_load
+	
+	; setup loading screen
+
+	; save current PRG and CHR bank
+	lda s_A53_PRG_BANK
+	pha
+	lda s_A53_CHR_BANK
+	pha
+
+	;set up sprite zero in OAM shadow buffers
+	lda #>OAM_SHADOW_1
+	sta shadow_oam_ptr+1
+	ldy #<gallery_sprite0_data_size
+	dey
+@copysprite0inoam1:
+	lda gallery_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	dey
+	bpl @copysprite0inoam1
+
+	lda #>OAM_SHADOW_2
+	sta shadow_oam_ptr+1
+	ldy #<loadscreen_sprite0_data_size
+	dey
+@copysprite0inoam2:
+	lda loadscreen_sprite0_data, y
+	sta (shadow_oam_ptr), y
+	inc oam_size
+	dey
+	bpl @copysprite0inoam2
+
+	; switch to universal palette
+	lda #<.bank(universal_pal)
+	sta temp3_8
+	lda #<universal_pal
+	ldx #>universal_pal
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_pal
+	ldx #>transfer_img_pal
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	; override fade
+	lda pal_fade_amt
+	pha
+	lda #0
+	sta pal_fade_amt
+	jsr fade_shadow_palette
+	pla
+	sta pal_fade_amt
+
+	; bug NMI to load sprite0 and load screen palette
+	lda sys_mode
+	ora #sys_MODE_NMIPAL|sys_MODE_NMIOAM
+	sta sys_mode
+
+	; setup loading screen NMI
+	lda s_PPUCTRL
+	pha
+	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
+	sta PPUCTRL
+	sta s_PPUCTRL
+
+	; switch to universal CHR bank
+	a53_set_chr_safe #3
+
+	; wait until vblank to transfer image palettes
+	; this allows the ppu palette transfer flag to expire
+	; and thus only display the universal palette
+	ldx #1
+	jsr wait_x_frames
+
+	; transfer palettes, attributes, and OAM buffer
+	lda z:img+img_DATA_PTR::img_PAL_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_PAL_PTR
+	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_pal
+	ldx #>transfer_img_pal
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	lda z:img+img_DATA_PTR::img_ATTR_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_ATTR_PTR
+	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_attr
+	ldx #>transfer_img_attr
+	jsr load_ptr_temp3_16
+	lda #NAMETABLE_A
+	sta temp1_8
+	jsr far_call_subroutine
+
+	lda z:img+img_DATA_PTR::img_OAM_LOC
+	sta temp3_8
+	a53_set_prg_safe s_A53_PRG_BANK
+	lda z:img+img_DATA_PTR::img_OAM_PTR
+	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_oam
+	ldx #>transfer_img_oam
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	; transfer BG CHR banks
+	lda #<transfer_4k_chr
+	ldx #>transfer_4k_chr
+	jsr load_ptr_temp3_16
+
+	; CHR RAM bank 0
+	a53_set_chr_safe #0
+	lda z:img+img_DATA_PTR::img_BANK_0_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_0_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$00
+	sta temp1_8
+	jsr far_call_subroutine
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
+	sta temp1_8
+	jsr far_call_subroutine
+
+	; CHR RAM bank 1
+	a53_set_chr_safe #1
+	lda z:img+img_DATA_PTR::img_BANK_1_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_1_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_1_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$00
+	sta temp1_8
+	jsr far_call_subroutine
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
+	sta temp1_8
+	jsr far_call_subroutine
+
+	; CHR RAM bank 2
+	a53_set_chr_safe #2
+	lda z:img+img_DATA_PTR::img_BANK_2_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_2_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_2_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$00
+	sta temp1_8
+	jsr far_call_subroutine
+	lda z:img+img_DATA_PTR::img_BANK_S_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_S_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_S_PTR+1
+	jsr load_ptr_temp1_16
+	lda #$10
+	sta temp1_8
+	jsr far_call_subroutine
+
+
+	; done with CHR transfer, begin to restore state
+
+	; bug system to load in new palettes
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+
+	; wait until vblank to restore state
+	ldx #1
+	jsr wait_x_frames
+
+	jsr fade_shadow_palette
+
+	pla
+	sta s_PPUCTRL
+	pla
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+
+	rts
+.endproc
+
+;;
+; sets the nametable for the title screen
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc load_titlescreen
+	sta temp2_8 ; scratch byte; using this for transfer_img_nam
+	lda #<img_title
+	ldx #>img_title
+	jsr load_ptr_temp1_16
+
+	ldy #0
+	sty img_progress
+	sty oam_size
+
+@ptr_load:
+	lda (temp1_16),y
+	sta img,y
+	iny
+	cpy #.sizeof(img_DATA_PTR)
+	bne @ptr_load
+	
+	; setup loading screen
+
+	; save current PRG and CHR bank
+	lda s_A53_PRG_BANK
+	pha
+	lda s_A53_CHR_BANK
+	pha
+
+
+	; set sprite0 pixel
+	lda #>OAM_SHADOW_2
+	sta shadow_oam_ptr+1
+	lda #<.bank(titlescreen_sprite0_data)
+	sta temp3_8
+	lda #<titlescreen_sprite0_data
+	ldx #>titlescreen_sprite0_data
+	jsr load_ptr_temp1_16
+	lda #<transfer_sprite
+	ldx #>transfer_sprite
+	jsr load_ptr_temp3_16
+	ldx #<titlescreen_sprite0_data_size
+	jsr far_call_subroutine
+
+	; set star sprite
+	lda #<.bank(titlescreen_sprite1_data)
+	sta temp3_8
+	lda #<titlescreen_sprite1_data
+	ldx #>titlescreen_sprite1_data
+	jsr load_ptr_temp1_16
+	lda #<transfer_sprite
+	ldx #>transfer_sprite
+	jsr load_ptr_temp3_16
+	ldx #<titlescreen_sprite0_data_size
+	jsr far_call_subroutine
+
+	; transfer palettes, attributes, and OAM buffer
+	lda z:img+img_DATA_PTR::img_PAL_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_PAL_PTR
+	ldx z:img+img_DATA_PTR::img_PAL_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_pal
+	ldx #>transfer_img_pal
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	; it says attribute, but really it points to nametable data
+	lda z:img+img_DATA_PTR::img_ATTR_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_ATTR_PTR
+	ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_nam
+	ldx #>transfer_img_nam
+	jsr load_ptr_temp3_16
+	lda temp2_8
+	sta temp1_8
+	jsr far_call_subroutine
+
+	; no OAM afaik?
+	lda z:img+img_DATA_PTR::img_OAM_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_OAM_PTR
+	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_oam
+	ldx #>transfer_img_oam
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	; transfer BG CHR bank
+	a53_set_chr_safe #3
+	lda z:img+img_DATA_PTR::img_BANK_0_LOC
+	sta temp3_8
+	lda z:img+img_DATA_PTR::img_BANK_0_PTR
+	ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
+	jsr load_ptr_temp1_16
+	lda #<transfer_4k_chr
+	ldx #>transfer_4k_chr
+	jsr load_ptr_temp3_16
+	lda #$00
+	sta temp1_8
+	jsr far_call_subroutine
+
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+
+	pla
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	rts
+.endproc
+
+;;
+; sets the nametable for gallery view
+; @param A base address of nametable ($20, $24, $28, or $2C)
+.proc set_gallery_loading_screen
+	pha
+	; we don't really need to zero the nametable again
+	lda sys_mode
+	and #sys_MODE_GALLERYINIT
+	bne @skip_nametable_init
+
+	pla
+	pha
+	tax
+	lda #0
+	tay
+	jsr ppu_clear_nt
+
+@skip_nametable_init:
+	; draw text
+	pla
+	pha
+	bit PPUSTATUS
+	sta PPUADDR
+	lda #$48
+	sta PPUADDR
+
+	lda #<txt_now_loading
+	ldx #>txt_now_loading
+	jsr load_ptr_temp1_16
+	lda #<.bank(txt_now_loading)
+	sta temp1_8
+	lda #1
+	sta temp2_8
+	jsr print_line
+
+	; draw loading bar
+	pla
+	bit PPUSTATUS
+	sta PPUADDR
+	lda #$64
+	sta PPUADDR
+
+	lda #$05
+	sta PPUDATA
+	ldx #22
+	lda #$06
+
+@loop:
+    sta PPUDATA
+	dex
+	bne @loop
+
+	lda #$07
+	sta PPUDATA
+
+
 	rts
 .endproc
