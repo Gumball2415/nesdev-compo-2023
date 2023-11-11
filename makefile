@@ -21,7 +21,7 @@ version = 0.0.1
 objlist = main title gallery credits header action53 pads graphics donut bhop music
 
 # image files
-imglist = img_0 img_1 img_3
+imglist = img_0 img_1 img_2 img_3
 
 
 AS65 = ca65 $(CFLAGS65)

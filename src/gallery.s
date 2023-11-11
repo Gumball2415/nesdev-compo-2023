@@ -266,9 +266,8 @@ gallery_exit:
 	sta PPUMASK
 	sta PPUCTRL
 
-	lda #0
-	sta s_A53_CHR_BANK
-	a53_set_chr_safe s_A53_CHR_BANK
+	; set CHR bank to first bank of image
+	a53_set_chr_safe #0
 
 	lda #NAMETABLE_A
 	jsr set_gallery_nametable

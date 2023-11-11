@@ -32,6 +32,9 @@ program_table_hi:
 	pha
 	txa
 	pha
+	; used for A argument in far_call_subroutine
+	lda temp1_8
+	pha
 
 	inc nmis
 
@@ -56,12 +59,17 @@ program_table_hi:
 
 @skip_galleryload:
 	jsr update_graphics
+	
+	; switch back to base bank
+	a53_set_chr_safe s_A53_CHR_BANK
 
 @skip_update_graphics:
 	lda sys_mode
 	ora #sys_MODE_NMIOCCURRED
 	sta sys_mode
 
+	pla
+	sta temp1_8
 	pla
 	tax
 	pla
@@ -98,9 +106,6 @@ program_table_hi:
 	sta sys_mode
 
 @skip_pal:
-	
-	; switch to initial graphics bank
-	a53_set_chr_safe s_A53_CHR_BANK
 
 	; update scroll
 	jsr update_scrolling
@@ -180,6 +185,7 @@ program_table_hi:
 	@skip_xy_set:
 .endif
 
+
 	lda s_PPUCTRL
 	sta PPUCTRL
 
@@ -195,11 +201,10 @@ program_table_hi:
 	; use shadow oam 2 for sprite 0 hit
 	lda #>OAM_SHADOW_2
 	sta shadow_oam_ptr+1
-	; overwrite s_A53_CHR_BANK
+	; universal tileset graphics for the loading screen
 	lda s_A53_CHR_BANK
 	pha
-	lda #3
-	sta s_A53_CHR_BANK
+	a53_set_chr_safe #3
 	jsr update_graphics
 
 .if .not(::SKIP_DOT_DISABLE)
@@ -224,7 +229,7 @@ program_table_hi:
 	sta PPUMASK
 	pla
 	sta s_A53_CHR_BANK
-	a53_set_chr s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
 	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
 	bit PPUSTATUS
