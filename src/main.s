@@ -334,10 +334,6 @@ program_table_hi:
 	; set system state to title screen
 	lda #STATE_ID::sys_TITLE
 	sta sys_state
-
-	; start music with song id #0
-	lda #0
-	jsr start_music
 	
 	jmp mainloop
 .endproc

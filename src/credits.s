@@ -7,6 +7,17 @@
 .macro txtmacro TXT_TYPE, credits_line_str
 .scope
 
+; one of the most batshit insane ways to make a pointer list of structs.
+.segment "PRG_CREDITS_LIST"
+	.addr credits_line
+
+; when compiled, this is what it looks like
+; 	credits_text:
+; 		.addr credits_line_80
+; 		.addr credits_line_79
+; 		.addr credits_line_78
+; 	...
+
 .segment "PRG1_8000"
 	credits_line_data:
 		.byte TXT_TYPE
@@ -27,17 +38,6 @@
 ;		.byte <string literal>
 ;		.byte $FF ; string terminated with $FF
 ;	...
-
-; one of the most batshit insane ways to make a pointer list of structs.
-.segment "PRG_CREDITS_LIST"
-	.addr credits_line
-
-; when compiled, this is what it looks like
-; 	credits_text:
-; 		.addr credits_line_80
-; 		.addr credits_line_79
-; 		.addr credits_line_78
-; 	...
 
 ; one of the most batshit insane ways to make an array of struct pointers.
 .segment "PRGFIXED_C000"
@@ -71,76 +71,94 @@ line_counter: .res 1
 credits_text:
 ; txtmacro  TXT_type, "============================"
 txtmacro TXT_HEADING, "       project SHVTERA"
-txtmacro TXT_REGULAR, "a proof-of-concept slideshow"
+txtmacro TXT_REGULAR, "a random art slideshow which"
+txtmacro TXT_REGULAR, "is also a 2bpp plane demo."
 txtmacro TXT_REGULAR, ""
-txtmacro TXT_HEADING, "Main programming:"           
-txtmacro TXT_REGULAR, "  - Kagamiin~"               
-txtmacro TXT_REGULAR, "  - Persune"                 
-txtmacro TXT_HEADING, "Assistance/Consulting:"      
-txtmacro TXT_REGULAR, "  - Kagamiin~"               
-txtmacro TXT_REGULAR, "  - Kasumi"                  
-txtmacro TXT_REGULAR, "  - Fiskbit"                 
-txtmacro TXT_REGULAR, "  - lidnariq"                
-txtmacro TXT_REGULAR, "  - zeta0134"                
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_HEADING, "Main programming:"
+txtmacro TXT_REGULAR, "  - Kagamiin~"
+txtmacro TXT_REGULAR, "  - Persune"
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_HEADING, "Assistance/Consulting:"
+txtmacro TXT_REGULAR, "  - Kagamiin~"
+txtmacro TXT_REGULAR, "  - Kasumi"
+txtmacro TXT_REGULAR, "  - Fiskbit"
+txtmacro TXT_REGULAR, "  - lidnariq"
+txtmacro TXT_REGULAR, "  - zeta0134"
+txtmacro TXT_REGULAR, ""
 txtmacro TXT_HEADING, "Art & Artists"
-txtmacro TXT_REGULAR, {"  - ", NESDEV_TXT_HEADING, "Discord Icon"}
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, {"  - ", NESDEV_TXT_REGULAR, "Discord Icon"}
 txtmacro TXT_REGULAR, "      - logotype by tokumaru"
-txtmacro TXT_REGULAR, "      - design by Persune"   
-txtmacro TXT_REGULAR, "  - Electric Space"          
-txtmacro TXT_REGULAR, "      - px art by Lockster"  
-txtmacro TXT_REGULAR, "  - Minae Zooming By"        
-txtmacro TXT_REGULAR, "      - lineart & coloring"  
-txtmacro TXT_REGULAR, "        by forple"           
+txtmacro TXT_REGULAR, "      - design by Persune"
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - Electric Space"
+txtmacro TXT_REGULAR, "      - px art by Lockster"
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - Minae Zooming By"
+txtmacro TXT_REGULAR, "      - lineart & coloring"
+txtmacro TXT_REGULAR, "        by forple"
 txtmacro TXT_REGULAR, "      - px render by Persune"
 txtmacro TXT_REGULAR, "      - attr. overlay assist"
-txtmacro TXT_REGULAR, "        by Kasumi"           
+txtmacro TXT_REGULAR, "        by Kasumi"
+txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, "  - Dagga Says Cheese <:3 )~"
-txtmacro TXT_REGULAR, "      - lineart by yoeynsf"  
+txtmacro TXT_REGULAR, "      - lineart by yoeynsf"
 txtmacro TXT_REGULAR, "      - px render by Persune"
-txtmacro TXT_REGULAR, "      - color consult from"  
-txtmacro TXT_REGULAR, "        Cobalt Teal"         
+txtmacro TXT_REGULAR, "      - color consult from"
+txtmacro TXT_REGULAR, "        Cobalt Teal"
 txtmacro TXT_REGULAR, "      - attr. overlay layout"
-txtmacro TXT_REGULAR, "        by Kagamiin~"        
-txtmacro TXT_HEADING, "External libraries"          
-txtmacro TXT_REGULAR, "  - bhop"                    
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        MIT-0 license."      
-txtmacro TXT_REGULAR, "        Copyright 2023"      
-txtmacro TXT_REGULAR, "        zeta0134."           
-txtmacro TXT_REGULAR, "  - Donut"                   
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        Unlicense License."  
-txtmacro TXT_REGULAR, "        Copyright 2023"      
-txtmacro TXT_REGULAR, "        Johnathan Roatch."   
-txtmacro TXT_REGULAR, "  - savtool.py"              
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        GNU All-Permissive"  
-txtmacro TXT_REGULAR, "        License."            
-txtmacro TXT_REGULAR, "        Copyright 2012-2018" 
-txtmacro TXT_REGULAR, "        Damian Yerrick."     
-txtmacro TXT_REGULAR, "  - pilbmp2nes.py"           
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        GNU All-Permissive"  
-txtmacro TXT_REGULAR, "        License."            
-txtmacro TXT_REGULAR, "        Copyright 2014-2015" 
-txtmacro TXT_REGULAR, "        Damian Yerrick."     
-txtmacro TXT_REGULAR, "  - preprocess_bmp.py"       
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        MIT-0 license."      
-txtmacro TXT_REGULAR, "        Copyright 2023"      
-txtmacro TXT_REGULAR, "        Persune & Kagamiin~."
-txtmacro TXT_REGULAR, "  - Action53 mapper config &"
-txtmacro TXT_REGULAR, "    helper functions"        
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        MIT license."        
-txtmacro TXT_REGULAR, "        Copyright 2023"      
-txtmacro TXT_REGULAR, "        zeta0134."           
-txtmacro TXT_REGULAR, "  - nrom_template"           
-txtmacro TXT_REGULAR, "      - licensed under the"  
-txtmacro TXT_REGULAR, "        GNU All-Permissive"  
-txtmacro TXT_REGULAR, "        License."            
-txtmacro TXT_REGULAR, "        Copyright 2011-2016" 
+txtmacro TXT_REGULAR, "        by Kagamiin~"
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_HEADING, "External libraries"
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - bhop"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        MIT-0 license."
+txtmacro TXT_REGULAR, "        Copyright 2023"
+txtmacro TXT_REGULAR, "        zeta0134."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - Donut"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        Unlicense License."
+txtmacro TXT_REGULAR, "        Copyright 2023"
+txtmacro TXT_REGULAR, "        Johnathan Roatch."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - savtool.py"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        GNU All-Permissive"
+txtmacro TXT_REGULAR, "        License."
+txtmacro TXT_REGULAR, "        Copyright 2012-2018"
 txtmacro TXT_REGULAR, "        Damian Yerrick."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - pilbmp2nes.py"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        GNU All-Permissive"
+txtmacro TXT_REGULAR, "        License."
+txtmacro TXT_REGULAR, "        Copyright 2014-2015"
+txtmacro TXT_REGULAR, "        Damian Yerrick."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - preprocess_bmp.py"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        MIT-0 license."
+txtmacro TXT_REGULAR, "        Copyright 2023"
+txtmacro TXT_REGULAR, "        Persune & Kagamiin~."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - Action53 mapper config &"
+txtmacro TXT_REGULAR, "    helper functions"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        MIT license."
+txtmacro TXT_REGULAR, "        Copyright 2023"
+txtmacro TXT_REGULAR, "        zeta0134."
+txtmacro TXT_REGULAR, ""
+txtmacro TXT_REGULAR, "  - nrom_template"
+txtmacro TXT_REGULAR, "      - licensed under the"
+txtmacro TXT_REGULAR, "        GNU All-Permissive"
+txtmacro TXT_REGULAR, "        License."
+txtmacro TXT_REGULAR, "        Copyright 2011-2016"
+txtmacro TXT_REGULAR, "        Damian Yerrick."
+txtmacro TXT_REGULAR, ""
 txtmacro TXT_HEADING, "Special thanks:"
 txtmacro TXT_REGULAR, "  - yoeynsf"
 txtmacro TXT_REGULAR, "  - forple"
@@ -158,7 +176,11 @@ txtmacro TXT_REGULAR, "  - jekuthiel"
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, {"shvtera group ", STAR_TILE, " ", NESDEV_TXT_REGULAR, " 2023"}
 
+.segment "PRG_CREDITS_LIST"
+
 credits_text_size := * - credits_text
+
+CREDITS_TEXT_LINES = <(credits_text_size/2)-1
 
 .segment MAIN_ROUTINES_BANK_SEGMENT
 
@@ -192,6 +214,45 @@ credits_text_size := * - credits_text
 	rts
 
 @skip_init:
+	; if palette fading is in progress, skip all logic and continue raster display
+	lda sys_mode
+	and #sys_MODE_PALETTEFADE
+	bne @check_fade_dir
+
+	; run logic
+	; todo:  refer to "docs/state machine diagram or whatevs.png"
+	lda #KEY_B
+	bit new_keys
+	bne @toggle_b
+	
+	jmp @skip
+
+@toggle_b:
+	lda #3
+	jsr start_music
+	lda #fade_dir_out
+	sta fade_dir
+	lda sys_mode
+	ora #sys_MODE_PALETTEFADE
+	sta sys_mode
+	jmp @skip
+
+@check_fade_dir:
+	lda fade_dir
+	bpl @skip ; do nothing else on fade in
+	lda pal_fade_amt
+	cmp #fade_amt_max
+	bne @skip
+
+	; after fade out is done, reset back to title
+	; after fade out is done, go back to title
+	lda #STATE_ID::sys_TITLE
+	sta sys_state
+	lda sys_mode
+	and #($FF - sys_MODE_INITDONE)
+	sta sys_mode
+
+@skip:
 	jsr credits_display_kernel_ntsc
 	rts
 .endproc
@@ -201,6 +262,20 @@ credits_text_size := * - credits_text
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
+
+	; init line counter and y scroll pos
+	sta line_counter
+	sta y_scroll_pos
+	sta y_scroll_pos+1
+	
+	; clear OAM
+	lda #$FF
+	ldx #0
+@clear_OAM:
+	sta OAM_SHADOW_1,x
+	sta OAM_SHADOW_2,x
+	inx
+	bne @clear_OAM
 
 	lda #2
 	jsr start_music
@@ -242,4 +317,4 @@ credits_text_size := * - credits_text
 .endproc
 
 .exportzp credits_ptr, line_counter
-.export credits_text
+.export credits_text, CREDITS_TEXT_LINES

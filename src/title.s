@@ -72,6 +72,8 @@ mode_select = temp3_8
 	jmp @skip
 
 @start_selected:
+	lda #3
+	jsr start_music
 	lda #fade_dir_out
 	sta fade_dir
 	lda sys_mode
@@ -118,6 +120,22 @@ mode_select = temp3_8
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
+	
+	; clear OAM
+	lda #$FF
+	ldx #0
+@clear_OAM:
+	sta OAM_SHADOW_1,x
+	sta OAM_SHADOW_2,x
+	inx
+	bne @clear_OAM
+
+	lda #0
+	jsr start_music
+
+	; set CHR bank to universal tileset
+	a53_set_chr_safe #3
+
 	lda #NAMETABLE_A
 	jsr load_titlescreen
 

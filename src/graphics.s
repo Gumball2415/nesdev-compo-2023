@@ -298,27 +298,6 @@ loop4:
 .endproc
 
 ;;
-; clears current CHR RAM bank
-.proc clear_chr
-	lda #0
-	tay
-	bit PPUSTATUS
-	sta PPUADDR
-	sta PPUADDR
-	ldx #>8192
-
-@loop:
-	sta PPUDATA
-	iny
-	bne @loop
-
-	dex
-	bne @loop
-
-	rts
-.endproc
-
-;;
 ; transfers palette data to shadow_palette_secondary
 ; @param temp1_16 pointer to palette data
 .proc transfer_img_pal
@@ -664,6 +643,10 @@ loop4:
 	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
 	sta PPUCTRL
 	sta s_PPUCTRL
+
+	lda sys_mode
+	ora #sys_MODE_GALLERYLOAD
+	sta sys_mode
 
 	; switch to universal CHR bank
 	a53_set_chr_safe #3
@@ -1045,13 +1028,25 @@ txt_now_loading:
 	lda #$42
 	sta temp2_16+0
 	; 28 lines
-	ldx #0
+	ldx #28
 @text_loop:
 	jsr print_credits_line
 	inc line_counter
-	lda line_counter
-	cmp #28
+	dex
 	bne @text_loop
+
+	; fill second screen with text data
+	lda #NAMETABLE_C
+	sta temp2_16+1
+	lda #02
+	sta temp2_16+0
+	; 28 lines
+	ldx #30
+@text_loop2:
+	jsr print_credits_line
+	inc line_counter
+	dex
+	bne @text_loop2
 
 	; bug system to load in new palettes
 	lda sys_mode
@@ -1078,10 +1073,15 @@ credits_sprite0_data:
 ; @param line_counter current credit line
 ; @param credits_ptr pointer to credit line
 .importzp line_counter, credits_ptr
-.import credits_text
+.import credits_text, CREDITS_TEXT_LINES
 .proc print_credits_line
+	txa
+	pha
 	; index into the credits line table
 	lda line_counter
+	cmp #<CREDITS_TEXT_LINES
+	bcs @skip
+
 	asl a
 	tax
 	lda credits_text,x
@@ -1144,6 +1144,7 @@ credits_sprite0_data:
 	sta s_A53_PRG_BANK
 	a53_set_prg_safe s_A53_PRG_BANK
 
+@skip:
 	; increment +$0020 on pointer
 	lda temp2_16+0
 	clc
@@ -1152,6 +1153,10 @@ credits_sprite0_data:
 	lda temp2_16+1
 	adc #$00
 	sta temp2_16+1
+
+	; restore X
+	pla
+	tax
 
 	rts
 .endproc

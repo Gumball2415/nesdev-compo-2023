@@ -6,6 +6,7 @@
 
 .segment MAIN_ROUTINES_BANK_SEGMENT
 
+.align $100
 .proc gallery_display_kernel_ntsc
 	; here, we have a budget of 10528 cycles before sprite 0 hits
 
@@ -152,7 +153,9 @@ jump_table_hi:
 
 .endproc
 
+.importzp line_counter
 .proc gallery_subroutine
+exit_check = line_counter
 	lda sys_mode
 	and #sys_MODE_INITDONE
 	bne @skip_init
@@ -189,8 +192,8 @@ jump_table_hi:
 	bit new_keys
 	beq @skip
 	jsr gallery_exit
-	; TODO: on B press, exit back to title screen
-	jmp @skip
+	lda #3
+	jsr start_music
 
 @img_index_epilogue:
 	; fade out
@@ -209,11 +212,25 @@ jump_table_hi:
 	bpl @skip ; do nothing else on fade in
 	lda pal_fade_amt
 	cmp #fade_amt_max
-	bne @skip ; after fade out is done, bug the system to transfer the new CHR
+	bne @skip
+	lda exit_check
+	bne @exit
 	
+	; after fade out is done, bug the system to transfer the new CHR
 	lda sys_mode
 	and #($FF - sys_MODE_INITDONE)
 	sta sys_mode
+	jmp @skip
+
+@exit:
+	; after fade out is done, go back to title
+	lda #STATE_ID::sys_TITLE
+	sta sys_state
+	lda sys_mode
+	and #($FF - (sys_MODE_INITDONE|sys_MODE_GALLERYINIT))
+	sta sys_mode
+	lda #3
+	jsr start_music
 
 @skip:
 	; display raster bankswitched image
@@ -257,17 +274,33 @@ gallery_right:
 
 
 gallery_exit:
+	lda #1
+	sta exit_check
 	rts
 .endproc
 
 .proc gallery_init
+exit_check = line_counter
 	; disable rendering
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
+	
+	; clear OAM
+	lda #$FF
+	ldx #0
+@clear_OAM:
+	sta OAM_SHADOW_1,x
+	sta OAM_SHADOW_2,x
+	inx
+	bne @clear_OAM
 
 	; set CHR bank to first bank of image
 	a53_set_chr_safe #0
+	
+	; reset exit check variable
+	lda #0
+	sta exit_check
 
 	lda #NAMETABLE_A
 	jsr set_gallery_nametable
@@ -279,7 +312,7 @@ gallery_exit:
 	; let the NMI handler know that we're transferring CHR
 	; enable OAM transfer for sprite 0
 	lda sys_mode
-	ora #sys_MODE_GALLERYINIT|sys_MODE_GALLERYLOAD
+	ora #sys_MODE_GALLERYINIT
 	sta sys_mode
 	
 	; init fade here, so that the first frame doesn't flash

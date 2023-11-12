@@ -841,7 +841,7 @@ ft_s3f0:
 	.word ft_s1p0c0, ft_s1p0c0, ft_s1p0c0, ft_s1p0c0, ft_s3p0c4
 ; Bank 0
 ft_s3p0c4:
-	.byte $00, $00, $88, $00, $00, $3E
+	.byte $88, $00, $00, $3F
 
 
 ; DPCM samples (located at DPCM segment)
