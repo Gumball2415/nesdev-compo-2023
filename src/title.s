@@ -49,15 +49,15 @@ mode_select = temp3_8
 	; todo:  refer to "docs/state machine diagram or whatevs.png"
 	lda #KEY_UP|KEY_DOWN|KEY_SELECT
 	bit new_keys
-	bne @toggle_select
+	bne @toggle_mode_select
 
 @check_start:
-	lda #KEY_START
+	lda #KEY_START|KEY_A
 	bit new_keys
-	bne @start_selected
+	bne @mode_selected
 	jmp @skip
 
-@toggle_select:
+@toggle_mode_select:
 	lda mode_select
 	eor #%00000001
 	sta mode_select
@@ -71,7 +71,7 @@ mode_select = temp3_8
 
 	jmp @skip
 
-@start_selected:
+@mode_selected:
 	lda #3
 	jsr start_music
 	lda #fade_dir_out
