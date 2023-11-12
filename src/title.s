@@ -14,15 +14,9 @@
 		bvs @wait_sprite0_reset
 .endif
 
-	inc s_A53_MUTEX
-	; splitting the a53_write macro in half for timing reasons 1/2
-	lda #A53_REG_CHR_BANK
-	sta z:s_A53_REG_SELECT
-
 @wait_sprite0_hit:
 	bit PPUSTATUS
 	bvc @wait_sprite0_hit ; wait for sprite 0 hit
-	dec s_A53_MUTEX
 
 	; let update_graphics know that we have sprite0
 	lda sys_mode

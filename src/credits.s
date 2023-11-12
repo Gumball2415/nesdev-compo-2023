@@ -4,13 +4,6 @@
 
 .export credits_subroutine
 
-TXT_REGULAR = 0
-TXT_HEADING = 1
-
-; must be 8 bytes!!
-.define NESDEV_TXT_REGULAR $08,$09,$0A,$0B,$0C,$0D,$0E,$00
-.define NESDEV_TXT_HEADING $0F,$10,$11,$12,$13,$14,$15,$16
-
 .macro txtmacro TXT_TYPE, credits_line_str
 .scope
 
@@ -69,7 +62,7 @@ TXT_HEADING = 1
 
 .segment "ZEROPAGE"
 
-credits_line: .tag txt_DATA_PTR
+credits_ptr:  .tag txt_DATA_PTR
 y_scroll_pos: .res 2
 line_counter: .res 1
 
@@ -179,15 +172,9 @@ credits_text_size := * - credits_text
 		bvs @wait_sprite0_reset
 .endif
 
-	inc s_A53_MUTEX
-	; splitting the a53_write macro in half for timing reasons 1/2
-	lda #A53_REG_CHR_BANK
-	sta z:s_A53_REG_SELECT
-
 @wait_sprite0_hit:
 	bit PPUSTATUS
 	bvc @wait_sprite0_hit ; wait for sprite 0 hit
-	dec s_A53_MUTEX
 
 	; let update_graphics know that we have sprite0
 	lda sys_mode
@@ -205,112 +192,54 @@ credits_text_size := * - credits_text
 	rts
 
 @skip_init:
-	; jsr credits_display_kernel_ntsc
+	jsr credits_display_kernel_ntsc
 	rts
 .endproc
 
 .proc credits_init
+	; disable rendering
+	lda #0
+	sta PPUMASK
+	sta PPUCTRL
+
 	lda #2
 	jsr start_music
-	lda sys_mode
-	ora #sys_MODE_INITDONE
-	sta sys_mode
-	rts
-.endproc
 
-.import print_line
-.proc load_credits_text
-	; sta temp2_8
-	; lda #<img_title
-	; ldx #>img_title
-	; jsr load_ptr_temp1_16
-
-	; ldy #0
-	; sty img_progress
-	; sty oam_size
-
-; @ptr_load:
-	; lda (temp1_16),y
-	; sta img,y
-	; iny
-	; cpy #.sizeof(img_DATA_PTR)
-	; bne @ptr_load
+	; set CHR bank to universal tileset
+	a53_set_chr_safe #3
 	
-	; ; setup loading screen
+	; init credits scroll
+	lda #NAMETABLE_A
+	ldx #NAMETABLE_C
+	jsr load_credits_screens
 
-	; ; save current PRG and CHR bank
-	; lda s_A53_PRG_BANK
-	; pha
-	; lda s_A53_CHR_BANK
-	; pha
+	; let the NMI handler know that we're done initializing
+	; let the NMI handler know that we're fading in
+	; let the NMI handler enable OAM and palette
+	lda sys_mode
+	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE|sys_MODE_NMIOAM|sys_MODE_NMIPAL
+	sta sys_mode
 
+	; init fade
+	lda #fade_amt_max
+	sta pal_fade_amt
 
-	; ; set sprite0 pixel
-	; lda #>OAM_SHADOW_2
-	; sta shadow_oam_ptr+1
-	; lda #<titlescreen_sprite0_data
-	; ldx #>titlescreen_sprite0_data
-	; jsr load_ptr_temp1_16
-	; ldx #<titlescreen_sprite0_data_size
-	; jsr transfer_sprite
+	; fade in
+	lda #fade_dir_in
+	sta fade_dir
 
-	; ; set star sprite
-	; lda #<titlescreen_sprite1_data
-	; ldx #>titlescreen_sprite1_data
-	; jsr load_ptr_temp1_16
-	; ldx #<titlescreen_sprite1_data_size
-	; jsr transfer_sprite
+	; slow fade speed
+	lda #4
+	sta pal_fade_int
+	sta pal_fade_ctr
 
-	; ; transfer palettes, attributes, and OAM buffer
-	; lda z:img+img_DATA_PTR::img_PAL_LOC
-	; sta s_A53_PRG_BANK
-	; a53_set_prg_safe s_A53_PRG_BANK
-	; lda z:img+img_DATA_PTR::img_PAL_PTR
-	; ldx z:img+img_DATA_PTR::img_PAL_PTR+1
-	; jsr load_ptr_temp1_16
-	; jsr transfer_img_pal
-
-	; ; it says attribute, but really it points to nametable data
-	; lda z:img+img_DATA_PTR::img_ATTR_LOC
-	; sta s_A53_PRG_BANK
-	; a53_set_prg_safe s_A53_PRG_BANK
-	; lda z:img+img_DATA_PTR::img_ATTR_PTR
-	; ldx z:img+img_DATA_PTR::img_ATTR_PTR+1
-	; jsr load_ptr_temp1_16
-	; lda temp2_8
-	; jsr transfer_img_nam
-
-	; ; no OAM afaik?
-	; lda z:img+img_DATA_PTR::img_OAM_LOC
-	; sta s_A53_PRG_BANK
-	; a53_set_prg_safe s_A53_PRG_BANK
-	; lda z:img+img_DATA_PTR::img_OAM_PTR
-	; ldx z:img+img_DATA_PTR::img_OAM_PTR+1
-	; jsr load_ptr_temp1_16
-	; jsr transfer_img_oam
-
-	; ; transfer BG CHR bank
-	; lda #3
-	; sta s_A53_CHR_BANK
-	; a53_set_chr_safe s_A53_CHR_BANK
-	; lda z:img+img_DATA_PTR::img_BANK_0_LOC
-	; sta s_A53_PRG_BANK
-	; a53_set_prg_safe s_A53_PRG_BANK
-	; lda z:img+img_DATA_PTR::img_BANK_0_PTR
-	; ldx z:img+img_DATA_PTR::img_BANK_0_PTR+1
-	; jsr load_ptr_temp1_16
-	; lda #$00
-	; jsr transfer_4k_chr
-
-	; lda sys_mode
-	; ora #sys_MODE_NMIPAL
-	; sta sys_mode
-
-	; pla
-	; sta s_A53_CHR_BANK
-	; a53_set_chr_safe s_A53_CHR_BANK
-	; pla
-	; sta s_A53_PRG_BANK
-	; a53_set_prg_safe s_A53_PRG_BANK
+	; remove if the stuff up here enables NMI
+	; enable NMI immediately
+	lda #NT_2000|OBJ_1000|BG_1000|VBLANK_NMI
+	sta PPUCTRL
+	sta s_PPUCTRL
 	rts
 .endproc
+
+.exportzp credits_ptr, line_counter
+.export credits_text

@@ -227,6 +227,66 @@ loop2:
   rts
 .endproc
 
+;;
+; taken from ppuclear.s by PinoBatch
+; Clears a nametable to a given tile number and attribute value.
+; adds a custom guard rail at the left edge for sprite 0 hit
+; (Turn off rendering in PPUMASK and set the VRAM address increment
+; to 1 in PPUCTRL first.)
+; @param A tile number
+; @param X base address of nametable ($20, $24, $28, or $2C)
+; @param Y attribute value ($00, $55, $AA, or $FF)
+; @param temp1_8 scratch byte
+.proc ppu_clear_nt_with_sprite_0_rail
+guard_rail_tile = $01
+guard_rail_attribute = %01
+guard_rail_attribute_byte = (%00 << 6) | (guard_rail_attribute << 4) | (%00 << 2) | (guard_rail_attribute << 0)
+
+	; Set base PPU address to XX00	
+	bit PPUSTATUS
+	stx PPUADDR
+	stx temp1_8
+	ldx #$00
+	stx PPUADDR
+
+	; Clear the 960 spaces of the main part of the nametable
+	; with guard rail tile at left edge
+	sta temp1_8
+	tya
+	pha
+	ldx #960/32
+loop3:
+	lda #guard_rail_tile
+	sta PPUDATA
+	lda temp1_8
+	ldy #(32-1)
+@subloop3:
+	sta PPUDATA
+	dey
+	bne @subloop3
+	dex
+	bne loop3
+
+	; Clear the 64 entries of the attribute table
+	; with guard rail attribute at left edge
+	pla
+	sta temp1_8
+	ldx #64/8
+loop4:
+	lda #guard_rail_attribute_byte
+	sta PPUDATA
+	lda temp1_8
+	ldy #(8-1)
+@subloop4:
+	sta PPUDATA
+	dey
+	bne @subloop4
+	dex
+	bne loop4
+
+	rts
+.endproc
+
 ; bugs the PPU to update the scroll position
 .proc update_scrolling
 	bit PPUSTATUS
@@ -458,7 +518,6 @@ loop2:
 ; set PPUADDR before calling.
 ; @param temp1_16 pointer to raw text data
 ; @param temp1_8 bank of raw text data
-; @param temp2_8 0 = normal, 1 = heading text
 .proc print_line
 	; switch to raw text bank
 	lda s_A53_PRG_BANK
@@ -518,24 +577,6 @@ loop2:
 .endproc
 
 .segment MAIN_ROUTINES_BANK_SEGMENT
-
-; sprite 0 hit happens precisely on this pixel
-titlescreen_sprite0_data:
-	.byte $76, $FF, $01, $E3 ; sprite 0
-	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
-titlescreen_sprite1_data:
-	.byte $98, STAR_TILE, $00, $58 ; star sprite
-	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
-gallery_sprite0_data:
-	.byte $4E, $FF, $00, $F8
-	gallery_sprite0_data_size := * - gallery_sprite0_data
-loadscreen_sprite0_data:
-	.byte $16, $FF, $00, $DF
-	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
-
-txt_now_loading:
-	.byte "now loading... ", STAR_TILE, $FF
-	txt_now_loading_size := * - txt_now_loading
 
 ;;
 ; loads the bitmap image with palette and attribute table
@@ -754,6 +795,12 @@ txt_now_loading:
 
 	rts
 .endproc
+gallery_sprite0_data:
+	.byte $4E, $FF, $00, $F8
+	gallery_sprite0_data_size := * - gallery_sprite0_data
+loadscreen_sprite0_data:
+	.byte $16, $FF, $00, $DF
+	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 
 ;;
 ; sets the nametable for the title screen
@@ -859,6 +906,7 @@ txt_now_loading:
 	sta temp1_8
 	jsr far_call_subroutine
 
+	; bug system to load in new palettes?
 	lda sys_mode
 	ora #sys_MODE_NMIPAL
 	sta sys_mode
@@ -871,6 +919,12 @@ txt_now_loading:
 	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
+titlescreen_sprite0_data:
+	.byte $16, $FF, $00, $7F ; sprite 0
+	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
+titlescreen_sprite1_data:
+	.byte $98, STAR_TILE, $00, $58 ; star sprite
+	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
 
 ;;
 ; sets the nametable for gallery view
@@ -927,6 +981,177 @@ txt_now_loading:
 	lda #$07
 	sta PPUDATA
 
+
+	rts
+.endproc
+txt_now_loading:
+	.byte "now loading... ", STAR_TILE, $FF
+	txt_now_loading_size := * - txt_now_loading
+
+;;
+; sets the nametable for the credits screen
+; @param A base address of first nametable ($20, $24, $28, or $2C)
+; @param X base address of second nametable ($20, $24, $28, or $2C)
+.importzp y_scroll_pos, line_counter
+.proc load_credits_screens
+	; clear second nametable
+	pha
+	lda #0
+	ldy #0
+	jsr ppu_clear_nt_with_sprite_0_rail
+
+	; clear first nametable
+	pla
+	tax
+	lda #0
+	ldy #0
+	jsr ppu_clear_nt_with_sprite_0_rail
+
+	; save current PRG and CHR bank
+	lda s_A53_PRG_BANK
+	pha
+	lda s_A53_CHR_BANK
+	pha
+
+	; set sprite 0 guard rail on left edge
+	; set sprite0 pixel
+	lda #>OAM_SHADOW_2
+	sta shadow_oam_ptr+1
+	lda #<.bank(credits_sprite0_data)
+	sta temp3_8
+	lda #<credits_sprite0_data
+	ldx #>credits_sprite0_data
+	jsr load_ptr_temp1_16
+	lda #<transfer_sprite
+	ldx #>transfer_sprite
+	jsr load_ptr_temp3_16
+	ldx #<credits_sprite0_data_size
+	jsr far_call_subroutine
+
+	; transfer palette
+	lda #<.bank(universal_pal)
+	sta temp3_8
+	lda #<universal_pal
+	ldx #>universal_pal
+	jsr load_ptr_temp1_16
+	lda #<transfer_img_pal
+	ldx #>transfer_img_pal
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
+
+	; fill first screen with text data
+	lda #NAMETABLE_A
+	sta temp2_16+1
+	lda #$42
+	sta temp2_16+0
+	; 28 lines
+	ldx #0
+@text_loop:
+	jsr print_credits_line
+	inc line_counter
+	lda line_counter
+	cmp #28
+	bne @text_loop
+
+	; bug system to load in new palettes
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
+
+	pla
+	sta s_A53_CHR_BANK
+	a53_set_chr_safe s_A53_CHR_BANK
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+	rts
+.endproc
+credits_sprite0_data:
+	.byte $01, $FF, $01, $00 ; sprite 0
+	credits_sprite0_data_size := * - credits_sprite0_data
+
+;;
+; prints text to the credits line specifed
+; set base nametable addr to temp2_16 before calling.
+; base nametable addr will shift to next line after calling.
+; @param temp1_16 pointer to credits text data
+; @param line_counter current credit line
+; @param credits_ptr pointer to credit line
+.importzp line_counter, credits_ptr
+.import credits_text
+.proc print_credits_line
+	; index into the credits line table
+	lda line_counter
+	asl a
+	tax
+	lda credits_text,x
+	sta temp1_16+0
+	lda credits_text+1,x
+	sta temp1_16+1
+
+	ldy #0
+@ptr_load:
+	lda (temp1_16),y
+	sta credits_ptr,y
+	iny
+	cpy #.sizeof(txt_DATA_PTR)
+	bne @ptr_load
+
+	; switch to text bank
+	lda s_A53_PRG_BANK
+	pha
+	a53_set_prg_safe z:credits_ptr+txt_DATA_PTR::txt_LOC
+	
+
+	; set final nametable address
+	bit PPUADDR
+	lda temp2_16+1
+	sta PPUADDR
+	lda temp2_16+0
+	sta PPUADDR
+
+	; set temp1_16 as pointer to raw text data
+	lda z:credits_ptr+txt_DATA_PTR::txt_PTR
+	ldx z:credits_ptr+txt_DATA_PTR::txt_PTR+1
+	jsr load_ptr_temp1_16
+	ldy #0
+	lda (temp1_16),y
+	bne @charprint_offset
+
+@charprint:
+	iny
+:	lda (temp1_16),y
+	bmi @end_of_line ; end loop if $FF is encountered
+	sta PPUDATA
+	iny
+	jmp :-
+
+
+@charprint_offset:
+	iny
+:	lda (temp1_16),y
+	bmi @end_of_line ; end loop if $FF is encountered
+	clc
+	adc #HEADER_TXT_OFFSET
+	sta PPUDATA
+	iny
+	jmp :-
+
+
+@end_of_line:
+	; switch back to current bank
+	pla
+	sta s_A53_PRG_BANK
+	a53_set_prg_safe s_A53_PRG_BANK
+
+	; increment +$0020 on pointer
+	lda temp2_16+0
+	clc
+	adc #$20
+	sta temp2_16+0
+	lda temp2_16+1
+	adc #$00
+	sta temp2_16+1
 
 	rts
 .endproc

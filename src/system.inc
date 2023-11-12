@@ -2,8 +2,6 @@
 .ifndef SYSTEM_INC
 .define SYSTEM_INC
 
-.charmap $20, $00
-
 .enum STATE_ID
 	sys_TITLE
 	sys_GALLERY
