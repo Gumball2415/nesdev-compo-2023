@@ -37,6 +37,9 @@ program_table_hi:
 	pha
 
 	inc nmis
+	
+	; switch back to base bank
+	a53_set_chr_safe s_A53_CHR_BANK
 
 	lda sys_mode
 	and #sys_MODE_PALETTEFADE
@@ -59,9 +62,6 @@ program_table_hi:
 
 @skip_galleryload:
 	jsr update_graphics
-	
-	; switch back to base bank
-	a53_set_chr_safe s_A53_CHR_BANK
 
 @skip_update_graphics:
 	lda sys_mode

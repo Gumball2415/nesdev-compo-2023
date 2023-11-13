@@ -52,8 +52,8 @@ img:            .tag img_DATA_PTR
 
 ;;
 ; @param fade_dir 1 = fade in, -1 = fade out
-; @param pal_fade_ctr increment ticks per frame
-; @param pal_fade_int interval of ticks
+; @param pal_fade_ctr increment ticks per frame + 1
+; @param pal_fade_int interval of ticks + 1
 ; @param pal_fade_amt fade steps to fade the palette
 .proc run_fade
 	lda pal_fade_ctr
@@ -612,6 +612,27 @@ loop4:
 	dey
 	bpl @copysprite0inoam2
 
+	; bug NMI to load sprite0
+	lda sys_mode
+	ora #sys_MODE_NMIOAM|sys_MODE_GALLERYLOAD
+	sta sys_mode
+
+	; setup loading screen NMI
+	lda s_PPUCTRL
+	pha
+	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
+	sta PPUCTRL
+	sta s_PPUCTRL
+
+	; wait until after vblank to transfer image palettes
+	; so we don't see visual glitches
+	ldx #1
+	jsr wait_x_frames
+
+	; switch to universal CHR bank
+	lda #3
+	sta s_A53_CHR_BANK
+
 	; switch to universal palette
 	lda #<.bank(universal_pal)
 	sta temp3_8
@@ -632,28 +653,12 @@ loop4:
 	pla
 	sta pal_fade_amt
 
-	; bug NMI to load sprite0 and load screen palette
-	lda sys_mode
-	ora #sys_MODE_NMIPAL|sys_MODE_NMIOAM
-	sta sys_mode
-
-	; setup loading screen NMI
-	lda s_PPUCTRL
-	pha
-	lda #NT_2800|OBJ_8X16|BG_1000|VBLANK_NMI
-	sta PPUCTRL
-	sta s_PPUCTRL
-
-	lda sys_mode
-	ora #sys_MODE_GALLERYLOAD
-	sta sys_mode
-
-	; switch to universal CHR bank
-	a53_set_chr_safe #3
-
 	; wait until vblank to transfer image palettes
 	; this allows the ppu palette transfer flag to expire
 	; and thus only display the universal palette
+	lda sys_mode
+	ora #sys_MODE_NMIPAL
+	sta sys_mode
 	ldx #1
 	jsr wait_x_frames
 
@@ -1073,13 +1078,14 @@ credits_sprite0_data:
 ; @param line_counter current credit line
 ; @param credits_ptr pointer to credit line
 .importzp line_counter, credits_ptr
-.import credits_text, CREDITS_TEXT_LINES
+.import credits_text, credits_text_size
 .proc print_credits_line
+CREDITS_TEXT_LINES = <(credits_text_size/2)-1
 	txa
 	pha
 	; index into the credits line table
 	lda line_counter
-	cmp #<CREDITS_TEXT_LINES
+	cmp #CREDITS_TEXT_LINES
 	bcs @skip
 
 	asl a

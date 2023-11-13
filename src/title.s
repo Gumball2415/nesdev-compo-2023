@@ -155,7 +155,7 @@ mode_select = temp3_8
 	sta fade_dir
 
 	; slow fade speed
-	lda #4
+	lda #(4-1)
 	sta pal_fade_int
 	sta pal_fade_ctr
 

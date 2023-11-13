@@ -180,8 +180,6 @@ txtmacro TXT_REGULAR, {"shvtera group ", STAR_TILE, " ", NESDEV_TXT_REGULAR, " 2
 
 credits_text_size := * - credits_text
 
-CREDITS_TEXT_LINES = <(credits_text_size/2)-1
-
 .segment MAIN_ROUTINES_BANK_SEGMENT
 
 
@@ -304,7 +302,7 @@ CREDITS_TEXT_LINES = <(credits_text_size/2)-1
 	sta fade_dir
 
 	; slow fade speed
-	lda #4
+	lda #(4-1)
 	sta pal_fade_int
 	sta pal_fade_ctr
 
@@ -317,4 +315,4 @@ CREDITS_TEXT_LINES = <(credits_text_size/2)-1
 .endproc
 
 .exportzp credits_ptr, line_counter
-.export credits_text, CREDITS_TEXT_LINES
+.export credits_text, credits_text_size

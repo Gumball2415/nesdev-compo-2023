@@ -336,7 +336,7 @@ exit_check = line_counter
 	sta fade_dir
 
 	; fast fade speed
-	lda #2
+	lda #(2-1)
 	sta pal_fade_int
 	sta pal_fade_ctr
 	
