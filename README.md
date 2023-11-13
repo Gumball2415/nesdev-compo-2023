@@ -1,5 +1,7 @@
 <img src="graphics/title/title transparent.svg" style="max-width:80%;" />
 
+a random art slideshow which is also a 2bpp plane demo.
+
 ## About
 
 This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
@@ -52,11 +54,16 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 	- forple
 	- Lockster
 	- Kagamiin~
+	- Lumi
+	- nyanpasu64
+	- my cat
 	- Fiskbit
 	- lidnariq
 	- zeta0134
 	- PinoBatch
 	- jekuthiel
+
+`shvtera group ⭐ NesDev 2023`
 
 ## Compiling
 
