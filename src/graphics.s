@@ -612,9 +612,9 @@ loop4:
 	dey
 	bpl @copysprite0inoam2
 
-	; bug NMI to load sprite0
+	; bug NMI to use loading screen NMI
 	lda sys_mode
-	ora #sys_MODE_NMIOAM|sys_MODE_GALLERYLOAD
+	ora #sys_MODE_GALLERYLOAD
 	sta sys_mode
 
 	; setup loading screen NMI

@@ -143,7 +143,7 @@ mode_select = temp3_8
 	; let the NMI handler know that we're fading in
 	; let the NMI handler enable OAM and palette
 	lda sys_mode
-	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE|sys_MODE_NMIOAM|sys_MODE_NMIPAL
+	ora #sys_MODE_INITDONE|sys_MODE_PALETTEFADE|sys_MODE_NMIPAL
 	sta sys_mode
 
 	; init fade

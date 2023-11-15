@@ -1,6 +1,5 @@
 .include "global.inc"
 .include "nes.inc"
-.include "checked_branches.inc"
 
 .segment "ZEROPAGE"
 nmis:        .res 1
@@ -83,15 +82,11 @@ program_table_hi:
 	sta PPUMASK				; disable rendering
 	sta PPUCTRL				; writes to PPUDATA will increment by 1 to the next PPU address
 
-	; transfer OAM
-	lda sys_mode
-	and #sys_MODE_NMIOAM
-	beq @skip_oam
-
+	; read input, syncing on OAM DMA
+	; transfer OAM must happen with controller reads
 	lda #0
 	sta OAMADDR
-	lda shadow_oam_ptr+1
-	sta OAM_DMA
+	jsr read_pads
 
 @skip_oam:
 
@@ -339,8 +334,6 @@ program_table_hi:
 .endproc
 
 .proc mainloop
-	; read input
-	jsr read_pads
 	; run music
 	jsr run_music
 	; run the machine
