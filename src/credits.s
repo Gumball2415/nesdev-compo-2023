@@ -64,6 +64,7 @@
 
 credits_ptr:  .tag txt_DATA_PTR
 y_scroll_pos: .res 2
+y_frac_count: .res 1
 line_counter: .res 1
 
 .segment "PRG_CREDITS_LIST"
@@ -185,21 +186,41 @@ credits_text_size := * - credits_text
 
 ; TODO: how to do this on a scrolling screen?
 .proc credits_display_kernel_ntsc
-.if .not(::SKIP_DOT_DISABLE)
-	; delay until it's ok to poll for sprite 0
-	@wait_sprite0_reset:
-		bit PPUSTATUS
-		bvs @wait_sprite0_reset
-.endif
+	dec y_frac_count
+	bne @dont_scroll
 
-@wait_sprite0_hit:
-	bit PPUSTATUS
-	bvc @wait_sprite0_hit ; wait for sprite 0 hit
+	; reset y fractional counter
+	lda #4
+	sta y_frac_count
 
-	; let update_graphics know that we have sprite0
-	lda sys_mode
-	ora #sys_MODE_SPRITE0SET
-	sta sys_mode
+	; increment y scroll position and check if past nametable boundary
+	inc y_scroll_pos
+	lda y_scroll_pos
+	; store it in PPU scroll shadow to apply scrolling
+	sta ppu_scroll_y
+	cmp #240
+	bne @no_carry
+
+	; reset fine y scroll position and increment page number
+	lda #0
+	sta y_scroll_pos
+	; store it in PPU scroll shadow to apply scrolling
+	sta ppu_scroll_y
+	inc y_scroll_pos+1
+
+	; extract Y nametable index bit from page number and
+	; write it to PPUCTRL shadow
+	lda y_scroll_pos+1
+	asl a
+	and #%00000010
+	sta temp3_8
+	lda s_PPUCTRL
+	and #%11111101
+	ora temp3_8
+	sta s_PPUCTRL
+
+@no_carry:
+@dont_scroll:
 	rts
 .endproc
 
@@ -261,10 +282,16 @@ credits_text_size := * - credits_text
 	sta PPUMASK
 	sta PPUCTRL
 
-	; init line counter and y scroll pos
+	; init line counter, PPU scroll and y scroll pos
 	sta line_counter
+	sta ppu_scroll_x
+	sta ppu_scroll_y
 	sta y_scroll_pos
 	sta y_scroll_pos+1
+	
+	; init y fractional counter
+	lda #4
+	sta y_frac_count
 	
 	; clear OAM
 	lda #$FF

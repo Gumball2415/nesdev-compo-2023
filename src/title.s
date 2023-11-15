@@ -121,6 +121,10 @@ mode_select = temp3_8
 	sta PPUMASK
 	sta PPUCTRL
 	
+	; reset scroll
+	sta ppu_scroll_x
+	sta ppu_scroll_y
+	
 	; clear OAM
 	lda #$FF
 	ldx #0
