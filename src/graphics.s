@@ -980,20 +980,20 @@ txt_now_loading:
 ; sets the nametable for the credits screen
 ; @param A base address of first nametable ($20, $24, $28, or $2C)
 ; @param X base address of second nametable ($20, $24, $28, or $2C)
-.importzp y_scroll_pos, line_counter
+.importzp line_index
 .proc load_credits_screens
 	; clear second nametable
 	pha
 	lda #0
 	ldy #0
-	jsr ppu_clear_nt_with_sprite_0_rail
+	jsr ppu_clear_nt
 
 	; clear first nametable
 	pla
 	tax
 	lda #0
 	ldy #0
-	jsr ppu_clear_nt_with_sprite_0_rail
+	jsr ppu_clear_nt
 
 	; save current PRG and CHR bank
 	lda s_A53_PRG_BANK
@@ -1027,31 +1027,20 @@ txt_now_loading:
 	jsr load_ptr_temp3_16
 	jsr far_call_subroutine
 
-	; fill first screen with text data
+	; fill two screens with text data
+	; fill second screen with text data
 	lda #NAMETABLE_A
 	sta temp2_16+1
-	lda #$42
+	lda #$02
 	sta temp2_16+0
-	; 28 lines
-	ldx #28
+	; 60 lines
+	; two screens worth of text
+	ldx #60
 @text_loop:
 	jsr print_credits_line
-	inc line_counter
+	inc line_index
 	dex
 	bne @text_loop
-
-	; fill second screen with text data
-	lda #NAMETABLE_C
-	sta temp2_16+1
-	lda #02
-	sta temp2_16+0
-	; 28 lines
-	ldx #30
-@text_loop2:
-	jsr print_credits_line
-	inc line_counter
-	dex
-	bne @text_loop2
 
 	; bug system to load in new palettes
 	lda sys_mode
@@ -1069,100 +1058,3 @@ txt_now_loading:
 credits_sprite0_data:
 	.byte $01, $FF, $01, $00 ; sprite 0
 	credits_sprite0_data_size := * - credits_sprite0_data
-
-;;
-; prints text to the credits line specifed
-; set base nametable addr to temp2_16 before calling.
-; base nametable addr will shift to next line after calling.
-; @param temp1_16 pointer to credits text data
-; @param line_counter current credit line
-; @param credits_ptr pointer to credit line
-.importzp line_counter, credits_ptr
-.import credits_text, credits_text_size
-.proc print_credits_line
-CREDITS_TEXT_LINES = <(credits_text_size/2)-1
-	txa
-	pha
-	; index into the credits line table
-	lda line_counter
-	cmp #CREDITS_TEXT_LINES
-	bcs @skip
-
-	asl a
-	tax
-	lda credits_text,x
-	sta temp1_16+0
-	lda credits_text+1,x
-	sta temp1_16+1
-
-	ldy #0
-@ptr_load:
-	lda (temp1_16),y
-	sta credits_ptr,y
-	iny
-	cpy #.sizeof(txt_DATA_PTR)
-	bne @ptr_load
-
-	; switch to text bank
-	lda s_A53_PRG_BANK
-	pha
-	a53_set_prg_safe z:credits_ptr+txt_DATA_PTR::txt_LOC
-	
-
-	; set final nametable address
-	bit PPUADDR
-	lda temp2_16+1
-	sta PPUADDR
-	lda temp2_16+0
-	sta PPUADDR
-
-	; set temp1_16 as pointer to raw text data
-	lda z:credits_ptr+txt_DATA_PTR::txt_PTR
-	ldx z:credits_ptr+txt_DATA_PTR::txt_PTR+1
-	jsr load_ptr_temp1_16
-	ldy #0
-	lda (temp1_16),y
-	bne @charprint_offset
-
-@charprint:
-	iny
-:	lda (temp1_16),y
-	bmi @end_of_line ; end loop if $FF is encountered
-	sta PPUDATA
-	iny
-	jmp :-
-
-
-@charprint_offset:
-	iny
-:	lda (temp1_16),y
-	bmi @end_of_line ; end loop if $FF is encountered
-	clc
-	adc #HEADER_TXT_OFFSET
-	sta PPUDATA
-	iny
-	jmp :-
-
-
-@end_of_line:
-	; switch back to current bank
-	pla
-	sta s_A53_PRG_BANK
-	a53_set_prg_safe s_A53_PRG_BANK
-
-@skip:
-	; increment +$0020 on pointer
-	lda temp2_16+0
-	clc
-	adc #$20
-	sta temp2_16+0
-	lda temp2_16+1
-	adc #$00
-	sta temp2_16+1
-
-	; restore X
-	pla
-	tax
-
-	rts
-.endproc

@@ -1,6 +1,29 @@
-; system state machine stuff
+; system state machine stuff and specific flags
 .ifndef SYSTEM_INC
 .define SYSTEM_INC
+
+; flags
+
+; waits for end of vblank before enabling rendering
+; scanline 0 is glitched
+SKIP_DOT_DISABLE = 1
+
+; constants
+
+STAR_TILE = $04
+.define	MAIN_ROUTINES_BANK_SEGMENT "PRG1_8000"
+		MAIN_ROUTINES_BANK = 1
+.define BHOP_MUSIC_DATA_BANK_SEGMENT "PRG2_8000"
+		BHOP_MUSIC_DATA_BANK = 2
+
+TXT_REGULAR = 0
+TXT_HEADING = 1
+TXT_BLANKSC = 2
+
+; must be 8 bytes!!
+.define NESDEV_TXT_REGULAR $08,$09,$0A,$0B,$0C,$0D,$0E,$00
+.define NESDEV_TXT_HEADING $0F,$10,$11,$12,$13,$14,$15,$16
+HEADER_TXT_OFFSET = $60
 
 .enum STATE_ID
 	sys_TITLE
@@ -18,6 +41,7 @@ fade_dir_stop = $00
 fade_dir_out = $FF
 fade_amt_max = 4
 
+sys_MODE_CREDITSLOAD = %00000001
 sys_MODE_GALLERYLOAD = %00000010
 sys_MODE_INITDONE    = %00000100
 sys_MODE_GALLERYINIT = %00001000

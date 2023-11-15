@@ -153,9 +153,9 @@ jump_table_hi:
 
 .endproc
 
-.importzp line_counter
+.importzp line_index
 .proc gallery_subroutine
-exit_check = line_counter
+exit_check = line_index
 	lda sys_mode
 	and #sys_MODE_INITDONE
 	bne @skip_init
@@ -280,7 +280,7 @@ gallery_exit:
 .endproc
 
 .proc gallery_init
-exit_check = line_counter
+exit_check = line_index
 	; disable rendering
 	lda #0
 	sta PPUMASK

@@ -6,29 +6,6 @@
 
 ; TODO: clean this up. curse you ca65!!!
 
-; flags
-
-; waits for end of vblank before enabling rendering
-; scanline 0 is glitched
-SKIP_DOT_DISABLE = 1
-
-; constants
-
-STAR_TILE = $04
-.define	MAIN_ROUTINES_BANK_SEGMENT "PRG1_8000"
-		MAIN_ROUTINES_BANK = 1
-.define BHOP_MUSIC_DATA_BANK_SEGMENT "PRG2_8000"
-		BHOP_MUSIC_DATA_BANK = 2
-
-TXT_REGULAR = 0
-TXT_HEADING = 1
-
-; must be 8 bytes!!
-.define NESDEV_TXT_REGULAR $08,$09,$0A,$0B,$0C,$0D,$0E,$00
-.define NESDEV_TXT_HEADING $0F,$10,$11,$12,$13,$14,$15,$16
-HEADER_TXT_OFFSET = $60
-
-
 ; global zeropage stuff
 .globalzp temp1_8
 .globalzp temp2_8
@@ -85,5 +62,9 @@ HEADER_TXT_OFFSET = $60
 
 ; bhop.s -- NOTE: not included in the file
 .global s_dmc_4010
+
+; credits.s
+.global print_credits_line
+.globalzp line_index
 
 .endif

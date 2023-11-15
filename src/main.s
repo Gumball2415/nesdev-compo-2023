@@ -53,6 +53,14 @@ program_table_hi:
 	; check if we're interrupting gallery CHR transfer
 @skip_palettefade:
 	lda sys_mode
+	and #sys_MODE_CREDITSLOAD
+	beq @skip_credits_load
+
+	jsr print_credits_line
+	inc line_index
+
+@skip_credits_load:
+	lda sys_mode
 	and #sys_MODE_GALLERYLOAD
 	beq @skip_galleryload
 
@@ -143,7 +151,7 @@ program_table_hi:
 		; 0yy
 		sta temp1_8
 		lda s_PPUCTRL
-		and #%00000011
+		and #%00000111
 		asl
 		asl
 		ora temp1_8
