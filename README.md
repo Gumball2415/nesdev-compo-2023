@@ -1,5 +1,3 @@
-<img src="graphics/title/title transparent.svg" style="max-width:80%;" />
-
 a random art slideshow which is also a 2bpp plane demo.
 
 ## About
@@ -7,6 +5,19 @@ a random art slideshow which is also a 2bpp plane demo.
 This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-2023).
 
 "SHVTERA" is an amalgamation of "shutter", i.e. the one in a camera. this is dedicated to my friends who make amazing art, and i wanted to capture them with a camera of my own, i.e. this entry.
+
+See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023/
+
+- ### Recommended hardware viewing/playback specification:
+	- NTSC Famicom/NES, unmodified PPU output composite video.
+
+## Controls
+
+- A: Enter
+- B: Exit
+- Left/Right: Switch to next/previous gallery image
+- Up/Down/Select: Title screen select
+- Start: Title screen Enter
 
 ## Credits
 
@@ -47,19 +58,21 @@ This is an entry for the [NESDev Compo '23](https://itch.io/jam/nesdev-compo-202
 	- Dagga Says Cheese <:3 )~
 		- line art by yoeynsf
 		- pixel rasterization/digitization by Persune
-		- color consulting by Cobalt Teal
-		- attrribute overlay layout by Kagamiin~
+		- color consulting from Cobalt Teal
+		- attribute overlay layout by Kagamiin~
 - ### Special thanks:
-	- yoeynsf
 	- forple
 	- Lockster
+	- Kasumi
+	- yoeynsf
 	- Kagamiin~
-	- Lumi
+	- Lumigado
 	- nyanpasu64
 	- my cat
 	- Fiskbit
 	- lidnariq
 	- zeta0134
+	- NewRisingSun
 	- PinoBatch
 	- jekuthiel
 
@@ -83,7 +96,7 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 - nrom-template related functions and compiling scripts are licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick
 - "SHVTERA" helper image conversion scripts and modifications are licensed under the MIT-0 license. Copyright 2023 Persune
 
-## Credits
+## More credits
 
 - Inspiration: forple, Lockster
 - Initial template: PinoBatch, yoeynsf

@@ -12,7 +12,7 @@
 
 # These are used in the title of the NES program and the zip file.
 filetitle = $(title)-$(version)
-title = nesdev-compo-2023
+title = SHVTERA-nesdev-compo-2023
 version = 1.0.0
 
 # Space-separated list of assembly language files that make up the
