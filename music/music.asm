@@ -200,7 +200,7 @@ ft_song_1:
 
 ft_song_2:
 	.word ft_s2_frames
-	.byte 15	; frame count
+	.byte 14	; frame count
 	.byte 128	; pattern length
 	.byte 4	; speed
 	.byte 150	; tempo
@@ -711,7 +711,6 @@ ft_s2_frames:
 	.word ft_s2f11
 	.word ft_s2f12
 	.word ft_s2f13
-	.word ft_s2f14
 ft_s2f0:
 	.word ft_s0p0c2, ft_s0p0c2, ft_s0p0c2, ft_s2p3c3, ft_s2p0c4
 ft_s2f1:
@@ -739,8 +738,6 @@ ft_s2f11:
 ft_s2f12:
 	.word ft_s0p0c2, ft_s0p0c2, ft_s0p0c2, ft_s2p3c3, ft_s2p0c4
 ft_s2f13:
-	.word ft_s0p0c2, ft_s0p0c2, ft_s0p0c2, ft_s2p3c3, ft_s2p0c4
-ft_s2f14:
 	.word ft_s0p0c2, ft_s0p0c2, ft_s0p0c2, ft_s2p4c3, ft_s2p1c4
 ; Bank 0
 ft_s2p0c0:

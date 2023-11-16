@@ -13,12 +13,12 @@
 # These are used in the title of the NES program and the zip file.
 filetitle = $(title)-$(version)
 title = nesdev-compo-2023
-version = 0.0.1
+version = 1.0.0
 
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
 # (the \ character) at the end of the line and continue on the next.
-objlist = main title gallery credits header action53 pads graphics donut bhop music
+objlist = main pads graphics donut bhop music action53 title gallery credits header
 
 # image files
 imglist = img_0 img_1 img_2 img_3
