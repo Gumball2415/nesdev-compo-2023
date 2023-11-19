@@ -32,35 +32,48 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 	- zeta0134
 - ### Art & Artists
 	- `NesDev` Discord Server Icon
-		- logotype by tokumaru
-		- design by Persune
+		- Logotype by tokumaru
+		- Background design by Persune
 	- Electric Space
-		- pixel art by Lockster
+		- Pixel art by Lockster
+		- Used with permission.
 	- Minae Zooming By
-		- line art and coloring by forple
-		- pixel rasterization/digitization by Persune
-		- attribute overlay assistance by Kasumi
+		- Line art and coloring by forple
+		- Pixel rasterization/digitization by Persune
+		- Attribute overlay assistance by Kasumi
+		- Used with permission.
 	- Dagga Says Cheese <:3 )~
-		- line art by yoeynsf
-		- pixel rasterization/digitization by Persune
-		- color consulting from Cobalt Teal
-		- attribute overlay layout by Kagamiin~
+		- Line art by yoeynsf
+		- Pixel rasterization/digitization by Persune
+		- Color consulting from Cobalt Teal
+		- Attribute overlay layout by Kagamiin~
+		- Used with permission.
 	- **All rights and copyrights of art and related graphic resources used are reserved to their respective owners credited above.**
+- ### Music
+	- Copyright 2023 Persune
+		- `impostor syndrome (2A03 ver.) [TITLE SCREEN]`
+		- `no guarantees (2A03 ver.) [GALLERY VIEW]`
+		- `genuflect [CREDITS SCROLL]`
+	- These samples are licensed under [HLRC LICENSE A](https://heckscaper.com/resources/license1.html).
+		- `HUGEKCRS.dmc`
+		- `HUGEKICK.dmc`
+		- `HUGESNAR.dmc`
+	- `asymmetric bass` instrument generated with dpcm-tools, which is licensed under the MIT license. Copyright 2021 zeta0134
 - ### External libraries
 	- bhop
-		- licensed under the MIT-0 license. Copyright 2023 zeta0134.
+		- Licensed under the MIT-0 license. Copyright 2023 zeta0134.
 	- Donut
-		- licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
+		- Licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
 	- `savtool.py`
-		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick.
+		- Licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick.
 	- `pilbmp2nes.py`
-		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick.
+		- Licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick.
 	- `preprocess_bmp.py`
-		- licensed under the MIT-0 license. Copyright 2023 Persune and Kagamiin~.
+		- Licensed under the MIT-0 license. Copyright 2023 Persune and Kagamiin~.
 	- Action53 mapper configuration and mapper helper functions
-		- licensed under the MIT license. Copyright 2023 zeta0134.
+		- Licensed under the MIT license. Copyright 2023 zeta0134.
 	- `nrom_template`
-		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick.
+		- Licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick.
 - ### Special thanks (in no particular order):
 	- forple
 	- Lockster
