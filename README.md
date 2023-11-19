@@ -30,21 +30,6 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 	- Fiskbit
 	- lidnariq
 	- zeta0134
-- ### External libraries
-	- bhop
-		- licensed under the MIT-0 license. Copyright 2023 zeta0134.
-	- Donut
-		- licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
-	- `savtool.py`
-		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick.
-	- `pilbmp2nes.py`
-		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick.
-	- `preprocess_bmp.py`
-		- licensed under the MIT-0 license. Copyright 2023 Persune and Kagamiin~.
-	- Action53 mapper configuration and mapper helper functions
-		- licensed under the MIT license. Copyright 2023 zeta0134.
-	- `nrom_template`
-		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick.
 - ### Art & Artists
 	- `NesDev` Discord Server Icon
 		- logotype by tokumaru
@@ -60,7 +45,23 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 		- pixel rasterization/digitization by Persune
 		- color consulting from Cobalt Teal
 		- attribute overlay layout by Kagamiin~
-- ### Special thanks:
+	- **All rights and copyrights of art and related graphic resources used are reserved to their respective owners credited above.**
+- ### External libraries
+	- bhop
+		- licensed under the MIT-0 license. Copyright 2023 zeta0134.
+	- Donut
+		- licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
+	- `savtool.py`
+		- licensed under the GNU All-Permissive License. Copyright 2012-2018 Damian Yerrick.
+	- `pilbmp2nes.py`
+		- licensed under the GNU All-Permissive License. Copyright 2014-2015 Damian Yerrick.
+	- `preprocess_bmp.py`
+		- licensed under the MIT-0 license. Copyright 2023 Persune and Kagamiin~.
+	- Action53 mapper configuration and mapper helper functions
+		- licensed under the MIT license. Copyright 2023 zeta0134.
+	- `nrom_template`
+		- licensed under the GNU All-Permissive License. Copyright 2011-2016 Damian Yerrick.
+- ### Special thanks (in no particular order):
 	- forple
 	- Lockster
 	- Kasumi
@@ -68,6 +69,8 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 	- Kagamiin~
 	- Lumigado
 	- nyanpasu64
+	- enid
+	- mai
 	- my cat
 	- Fiskbit
 	- lidnariq
@@ -85,11 +88,12 @@ Dependencies (these must be available in path):
 - LD65
 - Mesen
 
-Run the makefile in a suitable bash environment. For more detailed instructions, refer to Pinobatch's [NROM template](https://github.com/pinobatch/nrom-template). If no bash environment is available, run the make.bat file.
+Run the makefile in a suitable bash environment. For more detailed instructions, refer to Pinobatch's [NROM template](https://github.com/pinobatch/nrom-template).
 
 ## License
 
-- This project is licensed under the MIT license.
+- This project's **source code** is licensed under the MIT license.
+- **All rights and copyrights of art and related graphic resources used are reserved to their respective owners credited above.**
 - Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2023 zeta0134.
 - bhop is licensed under the MIT-0 license. Copyright 2023 zeta0134.
 - Donut NES CHR encoder and decoder is licensed under the Unlicense License. Copyright 2023 Johnathan Roatch
