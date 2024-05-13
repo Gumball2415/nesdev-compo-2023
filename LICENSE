@@ -1,4 +1,24 @@
-- This project is licensed under the MIT license.
+- This project's source code is licensed under the MIT license.
+- All rights and copyrights of art and related graphic resources used are reserved
+  to their respective owners credited below.
+  	- Electric Space
+		- Pixel art by Lockster
+		- Used with permission.
+		- Copyright Lockster 2021.
+	- Minae Yamazaki
+		- Base line art and coloring by forple
+		- Pixel rasterization/digitization by Persune
+		- Used with permission.
+		- Copyright forple 2024.
+	- Dagga Says Cheese <:3 )~
+		- Line art by yoeynsf
+		- Pixel rasterization/digitization by Persune
+		- Color consulting from Cobalt Teal
+		- Attribute overlay layout by Kagamiin~
+		- Used with permission.
+		- Copyright yoeynsf 2023.
+- The art and related graphic resources are source available only, meaning they
+  are not free to use.
 - Action53 configuration and mapper helper functions are licensed under the
   MIT license.
   Copyright 2023 zeta0134.
@@ -13,7 +33,7 @@
 
 The MIT License (MIT)
 
-Copyright (C) 2023 Persune
+Copyright (C) 2024 Persune
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the “Software”), to deal in
@@ -35,11 +55,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 - "SHVTERA" conversion helper scripts are licensed under the MIT-0 license.
-  Copyright 2023 Persune
+  Copyright 2024 Persune
 
 MIT No Attribution
 
-Copyright 2023 Persune
+Copyright 2024 Persune
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this
 software and associated documentation files (the "Software"), to deal in the Software

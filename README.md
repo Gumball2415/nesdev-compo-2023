@@ -37,24 +37,28 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 	- Electric Space
 		- Pixel art by Lockster
 		- Used with permission.
-	- Minae Zooming By
-		- Line art and coloring by forple
+		- Copyright Lockster 2021.
+	- Minae Yamazaki
+		- Base line art and coloring by forple
 		- Pixel rasterization/digitization by Persune
-		- Attribute overlay assistance by Kasumi
 		- Used with permission.
+		- Copyright forple 2024.
 	- Dagga Says Cheese <:3 )~
 		- Line art by yoeynsf
 		- Pixel rasterization/digitization by Persune
 		- Color consulting from Cobalt Teal
 		- Attribute overlay layout by Kagamiin~
 		- Used with permission.
+		- Copyright yoeynsf 2023.
 	- **All rights and copyrights of art and related graphic resources used are reserved to their respective owners credited above.**
+	- **The art is not licensed under MIT!!!**
+	- **The art is source available, meaning it's not free to use!!!**
 - ### Music
-	- Copyright 2023 Persune
+	- Copyright Persune 2023
 		- `impostor syndrome (2A03 ver.) [TITLE SCREEN]`
 		- `no guarantees (2A03 ver.) [GALLERY VIEW]`
 		- `genuflect [CREDITS SCROLL]`
-	- These samples are licensed under [HLRC LICENSE A](https://heckscaper.com/resources/license1.html).
+	- These samples are licensed under [HLRC LICENSE A](https://heckscaper.com/res2.php).
 		- `HUGEKCRS.dmc`
 		- `HUGEKICK.dmc`
 		- `HUGESNAR.dmc`
@@ -77,8 +81,8 @@ See the GitHub page for source: https://github.com/Gumball2415/nesdev-compo-2023
 - ### Special thanks (in no particular order):
 	- forple
 	- Lockster
-	- Kasumi
 	- yoeynsf
+	- Kasumi
 	- Kagamiin~
 	- Lumigado
 	- nyanpasu64
@@ -107,6 +111,7 @@ Run the makefile in a suitable bash environment. For more detailed instructions,
 
 - This project's **source code** is licensed under the MIT license.
 - **All rights and copyrights of art and related graphic resources used are reserved to their respective owners credited above.**
+- The art and related graphic resources are source available only, meaning they are not free to use.
 - Action53 configuration and mapper helper functions are licensed under the MIT license. Copyright 2023 zeta0134.
 - bhop is licensed under the MIT-0 license. Copyright 2023 zeta0134.
 - Donut NES CHR encoder and decoder is licensed under the Unlicense License. Copyright 2023 Johnathan Roatch

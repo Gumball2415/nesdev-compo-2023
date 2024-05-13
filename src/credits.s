@@ -78,7 +78,7 @@ kill_switch: 	.res 1	; 1 = end program
 
 credits_text:
 ; txtmacro  TXT_type, "============================"
-txtmacro TXT_BLANKSC, "nov 16... our hearts became consubstantial"
+txtmacro TXT_BLANKSC, "effervescent immaculate divinity"
 txtmacro TXT_HEADING, "       project SHVTERA"
 txtmacro TXT_REGULAR, "a random art slideshow which"
 txtmacro TXT_REGULAR, "is also a 2bpp plane demo."
@@ -104,14 +104,14 @@ txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, "  - Electric Space"
 txtmacro TXT_REGULAR, "      - Px art by Lockster"
 txtmacro TXT_REGULAR, "      - Used with permission"
+txtmacro TXT_REGULAR, "      - (C) Lockster 2021."
 txtmacro TXT_REGULAR, ""
-txtmacro TXT_REGULAR, "  - Minae Zooming By"
-txtmacro TXT_REGULAR, "      - Lineart & coloring"
+txtmacro TXT_REGULAR, "  - Minae Yamazaki"
+txtmacro TXT_REGULAR, "      - Base lineart & color"
 txtmacro TXT_REGULAR, "        by forple"
 txtmacro TXT_REGULAR, "      - Px render by Persune"
-txtmacro TXT_REGULAR, "      - Attr. overlay assist"
-txtmacro TXT_REGULAR, "        by Kasumi"
 txtmacro TXT_REGULAR, "      - Used with permission"
+txtmacro TXT_REGULAR, "      - (C) forple 2024."
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, "  - Dagga Says Cheese <:3 )~"
 txtmacro TXT_REGULAR, "      - Lineart by yoeynsf"
@@ -121,6 +121,7 @@ txtmacro TXT_REGULAR, "        Cobalt Teal"
 txtmacro TXT_REGULAR, "      - Attr. overlay layout"
 txtmacro TXT_REGULAR, "        by Kagamiin~"
 txtmacro TXT_REGULAR, "      - Used with permission"
+txtmacro TXT_REGULAR, "      - (C) yoeynsf 2023."
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, "  - All rights & copyrights"
 txtmacro TXT_REGULAR, "    of art & related graphic"
@@ -128,9 +129,14 @@ txtmacro TXT_REGULAR, "    resources used are"
 txtmacro TXT_REGULAR, "    reserved to their"
 txtmacro TXT_REGULAR, "    respective owners"
 txtmacro TXT_REGULAR, "    credited above."
+txtmacro TXT_REGULAR, "  - The art is not licensed"
+txtmacro TXT_REGULAR, "    under MIT!!!"
+txtmacro TXT_REGULAR, "  - The art is source"
+txtmacro TXT_REGULAR, "    available, meaning it's"
+txtmacro TXT_REGULAR, "    not free to use!!!"
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_HEADING, "Music"
-txtmacro TXT_REGULAR, "  - Copyright 2023 Persune."
+txtmacro TXT_REGULAR, "  - (C) Persune 2023."
 txtmacro TXT_REGULAR, "  - See repo for details."
 txtmacro TXT_REGULAR, "      - impostor syndrome"
 txtmacro TXT_REGULAR, "          - [TITLE SCREEN]"
@@ -151,10 +157,10 @@ txtmacro TXT_REGULAR, "    helper functions"
 txtmacro TXT_REGULAR, "  - nrom_template"
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_HEADING, "Special thanks (in no order)"
-txtmacro TXT_REGULAR, "  - forple"
 txtmacro TXT_REGULAR, "  - Lockster"
-txtmacro TXT_REGULAR, "  - Kasumi"
+txtmacro TXT_REGULAR, "  - forple"
 txtmacro TXT_REGULAR, "  - yoeynsf"
+txtmacro TXT_REGULAR, "  - Kasumi"
 txtmacro TXT_REGULAR, "  - Kagamiin~"
 txtmacro TXT_REGULAR, "  - Lumigado"
 txtmacro TXT_REGULAR, "  - nyanpasu64"
@@ -174,8 +180,8 @@ txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, {"shvtera group ", STAR_TILE, " ", NESDEV_TXT_REGULAR, "2023"}
 txtmacro TXT_REGULAR, ""
 txtmacro TXT_REGULAR, "mind the skip       -persune"
-txtmacro TXT_BLANKSC, "i hope you're happy now where you are and where you will be."
-txtmacro TXT_BLANKSC, ""
+txtmacro TXT_BLANKSC, "rest in fucking peace"
+txtmacro TXT_BLANKSC, "i truly do not deserve salvation"
 
 .segment "PRG_CREDITS_LIST"
 
@@ -309,15 +315,13 @@ credits_text_size := * - credits_text
 	; init y fractional counter
 	lda #PX_PER_FRAME
 	sta y_frac_count
-	
-	; clear OAM
-	lda #$FF
-	ldx #0
-@clear_OAM:
-	sta OAM_SHADOW_1,x
-	sta OAM_SHADOW_2,x
-	inx
-	bne @clear_OAM
+
+	; init OAM
+	lda #0
+	sta oam_size
+	lda #>OAM_SHADOW_1
+	sta shadow_oam_ptr+1
+	jsr init_oam
 
 	lda #2
 	jsr start_music
@@ -467,7 +471,8 @@ TEXT_LENGTH = 28
 @charprint_regular:
 	iny
 :	lda (temp1_16),y
-	bmi @end_of_line ; end loop if $FF is encountered
+	cmp #$FF
+	beq @end_of_line ; end loop if $FF is encountered
 	sta PPUDATA
 	iny
 	jmp :-
@@ -476,7 +481,8 @@ TEXT_LENGTH = 28
 @charprint_heading:
 	iny
 :	lda (temp1_16),y
-	bmi @end_of_line ; end loop if $FF is encountered
+	cmp #$FF
+	beq @end_of_line ; end loop if $FF is encountered
 	clc
 	adc #HEADER_TXT_OFFSET
 	sta PPUDATA

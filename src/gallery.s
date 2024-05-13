@@ -285,15 +285,16 @@ exit_check = line_index
 	lda #0
 	sta PPUMASK
 	sta PPUCTRL
-	
-	; clear OAM
-	lda #$FF
-	ldx #0
-@clear_OAM:
-	sta OAM_SHADOW_1,x
-	sta OAM_SHADOW_2,x
-	inx
-	bne @clear_OAM
+
+	; init OAMs
+	lda #0
+	sta oam_size
+	lda #>OAM_SHADOW_2
+	sta shadow_oam_ptr+1
+	jsr init_oam
+	lda #>OAM_SHADOW_1
+	sta shadow_oam_ptr+1
+	jsr init_oam
 
 	; set CHR bank to first bank of image
 	a53_set_chr_safe #0

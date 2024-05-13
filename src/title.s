@@ -95,15 +95,6 @@ mode_select = temp3_8
 	lda sys_mode
 	and #($FF - sys_MODE_INITDONE)
 	sta sys_mode
-	
-	; clear OAM
-	lda #$FF
-	ldx #0
-@clear_OAM:
-	sta OAM_SHADOW_1,x
-	sta OAM_SHADOW_2,x
-	inx
-	bne @clear_OAM
 	; hackfix: since gallery mode recalls the init routine, we set music here in advance
 	; if in credits, this will be overriden anyway
 	lda #1
@@ -124,15 +115,13 @@ mode_select = temp3_8
 	; reset scroll
 	sta ppu_scroll_x
 	sta ppu_scroll_y
-	
-	; clear OAM
-	lda #$FF
-	ldx #0
-@clear_OAM:
-	sta OAM_SHADOW_1,x
-	sta OAM_SHADOW_2,x
-	inx
-	bne @clear_OAM
+
+	; init OAM
+	lda #0
+	sta oam_size
+	lda #>OAM_SHADOW_1
+	sta shadow_oam_ptr+1
+	jsr init_oam
 
 	lda #0
 	jsr start_music

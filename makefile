@@ -13,7 +13,7 @@
 # These are used in the title of the NES program and the zip file.
 filetitle = $(title)-$(version)
 title = SHVTERA-nesdev-compo-2023
-version = 1.0.2
+version = 1.1.0
 
 # Space-separated list of assembly language files that make up the
 # PRG ROM.  If it gets too long for one line, you can add a backslash
@@ -179,7 +179,8 @@ $(imgmiscrawlistmac):
 	cp $(imgdir)/$@.s $(objdir)/$@.s
 
 # conversion exception for bank_s
-# todo: automate generation of bank_s.bmp
+# todo: automate generation of bank_s.bmp?
+# seems like NP hard to do so though unless overlaypal is more reliable
 $(objdir)/%/bank_s.chr: $(imgdir)/%/bank_s.bmp
 	$(PY) tools/pilbmp2nes.py $< $@
 

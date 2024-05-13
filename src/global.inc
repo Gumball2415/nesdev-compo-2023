@@ -38,7 +38,7 @@
 
 ; graphics.s
 .global set_title_nametable, load_titlescreen, run_fade, fade_shadow_palette
-.global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr
+.global transfer_palette, update_scrolling, ppu_clear_nt, clear_chr, init_oam
 .global clear_all_chr, transfer_4k_chr, load_chr_bitmap, universal_tileset
 .global set_gallery_nametable, set_gallery_loading_screen, transfer_img_pal
 .global gallery_sprite0_data, gallery_sprite0_data_size, update_progress_bar

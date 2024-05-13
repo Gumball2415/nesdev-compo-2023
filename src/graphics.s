@@ -9,7 +9,7 @@ s_PPUCTRL:      .res 1
 s_PPUMASK:      .res 1
 ppu_scroll_x:   .res 1
 ppu_scroll_y:   .res 1
-oam_size:       .res 1
+oam_size:       .res 1 ; oam bytes used
 shadow_oam_ptr: .res 2
 ; palette buffers, stored here for speed
 shadow_palette_primary: .res 32 ; primary buffer, tranferred to PPUDATA
@@ -314,14 +314,17 @@ loop4:
 .endproc
 
 ;;
-; transfers OAM data to shadow OAM
+; inits shadow OAM at shadow_oam_ptr after oam_size
+; oam_size gets reset to 0
 ; @param temp1_16 pointer to OAM data
-.proc transfer_img_oam
+.proc init_oam
 	ldy oam_size
-
+	lda #$FF
 @loop:
-	lda (temp1_16),y
 	sta (shadow_oam_ptr),y
+	iny
+	iny
+	iny
 	iny
 	bne @loop
 	sty oam_size
@@ -331,15 +334,16 @@ loop4:
 
 ;;
 ; transfers metasprite data to shadow OAM
+; make sure shadow_oam_ptr is set to destination!
 ; @param temp1_16 pointer to OAM data
-; @param X size of metasprite data
-.proc transfer_sprite
+.proc transfer_metasprite
 	; preserve shadow OAM pointer
 	lda shadow_oam_ptr+0
 	pha
 	lda shadow_oam_ptr+1
 	pha
 
+	; allocate sprites after used OAM bytes
 	clc
 	lda oam_size
 	adc shadow_oam_ptr+0
@@ -347,16 +351,36 @@ loop4:
 	lda #0
 	adc shadow_oam_ptr+1
 	sta shadow_oam_ptr+1
+
 	ldy #0
+	lda (temp1_16),y ; object count
+	beq @end ; no sprites
+	; multiply by 4 and add to oam_size
+	asl
+	asl
+	tax ; set loop counter
+	clc
+	adc oam_size
+	sta oam_size
+	bcs @end ; overflow? probably too much objects to store safely
+
+	; hack! increment temp1_16 ptr
+	clc
+	lda #1
+	adc temp1_16+0
+	sta temp1_16+0
+	lda #0
+	adc temp1_16+1
+	sta temp1_16+1
 
 @loop:
 	lda (temp1_16),y
 	sta (shadow_oam_ptr),y
 	iny
-	inc oam_size
 	dex
 	bne @loop
-	
+
+@end:
 	pla
 	sta shadow_oam_ptr+1
 	pla
@@ -593,24 +617,32 @@ loop4:
 	;set up sprite zero in OAM shadow buffers
 	lda #>OAM_SHADOW_1
 	sta shadow_oam_ptr+1
-	ldy #<gallery_sprite0_data_size
-	dey
-@copysprite0inoam1:
-	lda gallery_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	dey
-	bpl @copysprite0inoam1
+	lda #<.bank(gallery_sprite0_data)
+	sta temp3_8
+	lda #<gallery_sprite0_data
+	ldx #>gallery_sprite0_data
+	jsr load_ptr_temp1_16
+	lda #<transfer_metasprite
+	ldx #>transfer_metasprite
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
 
+	; from now on, we use OAM_SHADOW_2
+	; reset oam_size to reflect this
+	; todo: separate oam_size per buffer?
+	lda #0
+	sta oam_size
 	lda #>OAM_SHADOW_2
 	sta shadow_oam_ptr+1
-	ldy #<loadscreen_sprite0_data_size
-	dey
-@copysprite0inoam2:
-	lda loadscreen_sprite0_data, y
-	sta (shadow_oam_ptr), y
-	inc oam_size
-	dey
-	bpl @copysprite0inoam2
+	lda #<.bank(loadscreen_sprite0_data)
+	sta temp3_8
+	lda #<loadscreen_sprite0_data
+	ldx #>loadscreen_sprite0_data
+	jsr load_ptr_temp1_16
+	lda #<transfer_metasprite
+	ldx #>transfer_metasprite
+	jsr load_ptr_temp3_16
+	jsr far_call_subroutine
 
 	; bug NMI to use loading screen NMI
 	lda sys_mode
@@ -691,8 +723,8 @@ loop4:
 	lda z:img+img_DATA_PTR::img_OAM_PTR
 	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
 	jsr load_ptr_temp1_16
-	lda #<transfer_img_oam
-	ldx #>transfer_img_oam
+	lda #<transfer_metasprite
+	ldx #>transfer_metasprite
 	jsr load_ptr_temp3_16
 	jsr far_call_subroutine
 
@@ -784,11 +816,11 @@ loop4:
 	rts
 .endproc
 gallery_sprite0_data:
+	.byte 1
 	.byte $4E, $FF, $00, $F8
-	gallery_sprite0_data_size := * - gallery_sprite0_data
 loadscreen_sprite0_data:
+	.byte 1
 	.byte $16, $FF, $00, $DF
-	loadscreen_sprite0_data_size := * - loadscreen_sprite0_data
 
 ;;
 ; sets the nametable for the title screen
@@ -819,30 +851,15 @@ loadscreen_sprite0_data:
 	pha
 
 
-	; set sprite0 pixel
-	lda #>OAM_SHADOW_2
-	sta shadow_oam_ptr+1
-	lda #<.bank(titlescreen_sprite0_data)
+	; set sprite0 pixel and star sprite
+	lda #<.bank(titlescreen_metasprite_data)
 	sta temp3_8
-	lda #<titlescreen_sprite0_data
-	ldx #>titlescreen_sprite0_data
+	lda #<titlescreen_metasprite_data
+	ldx #>titlescreen_metasprite_data
 	jsr load_ptr_temp1_16
-	lda #<transfer_sprite
-	ldx #>transfer_sprite
+	lda #<transfer_metasprite
+	ldx #>transfer_metasprite
 	jsr load_ptr_temp3_16
-	ldx #<titlescreen_sprite0_data_size
-	jsr far_call_subroutine
-
-	; set star sprite
-	lda #<.bank(titlescreen_sprite1_data)
-	sta temp3_8
-	lda #<titlescreen_sprite1_data
-	ldx #>titlescreen_sprite1_data
-	jsr load_ptr_temp1_16
-	lda #<transfer_sprite
-	ldx #>transfer_sprite
-	jsr load_ptr_temp3_16
-	ldx #<titlescreen_sprite0_data_size
 	jsr far_call_subroutine
 
 	; transfer palettes, attributes, and OAM buffer
@@ -875,8 +892,8 @@ loadscreen_sprite0_data:
 	lda z:img+img_DATA_PTR::img_OAM_PTR
 	ldx z:img+img_DATA_PTR::img_OAM_PTR+1
 	jsr load_ptr_temp1_16
-	lda #<transfer_img_oam
-	ldx #>transfer_img_oam
+	lda #<transfer_metasprite
+	ldx #>transfer_metasprite
 	jsr load_ptr_temp3_16
 	jsr far_call_subroutine
 
@@ -907,12 +924,10 @@ loadscreen_sprite0_data:
 	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
-titlescreen_sprite0_data:
+titlescreen_metasprite_data:
+	.byte 2
 	.byte $16, $FF, $00, $7F ; sprite 0
-	titlescreen_sprite0_data_size := * - titlescreen_sprite0_data
-titlescreen_sprite1_data:
 	.byte $98, STAR_TILE, $00, $58 ; star sprite
-	titlescreen_sprite1_data_size := * - titlescreen_sprite1_data
 
 ;;
 ; sets the nametable for gallery view
@@ -1001,21 +1016,6 @@ txt_now_loading:
 	lda s_A53_CHR_BANK
 	pha
 
-	; set sprite 0 guard rail on left edge
-	; set sprite0 pixel
-	lda #>OAM_SHADOW_2
-	sta shadow_oam_ptr+1
-	lda #<.bank(credits_sprite0_data)
-	sta temp3_8
-	lda #<credits_sprite0_data
-	ldx #>credits_sprite0_data
-	jsr load_ptr_temp1_16
-	lda #<transfer_sprite
-	ldx #>transfer_sprite
-	jsr load_ptr_temp3_16
-	ldx #<credits_sprite0_data_size
-	jsr far_call_subroutine
-
 	; transfer palette
 	lda #<.bank(universal_pal)
 	sta temp3_8
@@ -1055,6 +1055,3 @@ txt_now_loading:
 	a53_set_prg_safe s_A53_PRG_BANK
 	rts
 .endproc
-credits_sprite0_data:
-	.byte $01, $FF, $01, $00 ; sprite 0
-	credits_sprite0_data_size := * - credits_sprite0_data

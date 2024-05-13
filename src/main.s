@@ -278,11 +278,6 @@ program_table_hi:
 	sta $300,x
 	sta $400,x
 	sta $500,x
-	; clear shadow OAM 1 and 2
-	lda #$FF
-	sta OAM_SHADOW_1,x
-	sta OAM_SHADOW_2,x
-	lda #0
 	inx
 	bne @clrmem
 
@@ -296,10 +291,6 @@ program_table_hi:
 	iny
 	cpy #32
 	bne @clrshadowpal
-
-	; set shadow OAM page
-	lda #>OAM_SHADOW_1
-	sta shadow_oam_ptr+1
 
 	; Set PRG and CHR bank
 	jsr init_action53
@@ -441,16 +432,17 @@ program_table_hi:
 ; we can't use temp2_16 because interrupt proofing uses it as a PPUADDR tracker
 ; clobbers A
 ; @param temp1_8: A param of routine
-; @param temp3_8: bank of routine
+; @param temp3_8: bank to bankswitch to
 ; @param temp3_16: pointer to routine
 .proc far_call_subroutine 
 	; push the current bank
 	lda s_A53_PRG_BANK
 	pha
+
 	; switch banks
 	a53_set_prg_safe temp3_8
-	; call to target
 
+	; call to target
 	; simulate a JSR indirect
 	lda #>(far_call_subroutine_return-1)
 	pha
@@ -458,12 +450,15 @@ program_table_hi:
 	pha
 	lda temp1_8
 	jmp (temp3_16)
+
 	; pull current bank
 far_call_subroutine_return:
 	pla
 	sta s_A53_PRG_BANK
+
 	; switch banks
 	a53_set_prg_safe s_A53_PRG_BANK
+
 	rts
 .endproc
 
